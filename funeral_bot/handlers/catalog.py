@@ -282,7 +282,7 @@ async def _show_photo(callback: CallbackQuery, code: str, index: int, first: boo
     file_path = files[index]
     filename = file_path.name
     name = next((n for n, c in MONUMENTS if c == code), code)
-    caption = f"<b>{code} — {name}</b>\n{index + 1} / {total}"
+    caption = f"<b>{code} — {name}</b>\n{index + 1} / {total}\n\n💰 Ціна уточнюється у менеджера по телефону"
     nav_kb = _photo_nav_keyboard(code, index, total)
 
     # Беремо file_id з кешу БД якщо є

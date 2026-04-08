@@ -26,8 +26,11 @@ def _build_welcome_text() -> str:
 
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
-    async with get_connection() as db:
-        await get_or_create_client(db, message.from_user.id)
+    try:
+        async with get_connection() as db:
+            await get_or_create_client(db, message.from_user.id)
+    except Exception as e:
+        logger.error("DB error on /start for user %d: %s", message.from_user.id, e)
 
     await message.answer(_build_welcome_text(), reply_markup=main_menu)
-    logger.info("Новий/повернений користувач: %d", message.from_user.id)
+    logger.info("Користувач %d: /start", message.from_user.id)

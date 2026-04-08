@@ -13,8 +13,11 @@ async def get_db() -> aiosqlite.Connection:
     global _db_connection
     if _db_connection is None:
         _db_connection = await aiosqlite.connect(settings.DB_NAME)
-        _db_connection.row_factory = aiosqlite.Row
+        # row_factory встановлюємо через execute у воркер-треді — thread-safe
         await _db_connection.execute("PRAGMA foreign_keys = ON")
+        await _db_connection.execute("PRAGMA journal_mode = WAL")
+        # Встановлюємо row_factory після підключення
+        _db_connection.row_factory = aiosqlite.Row
     return _db_connection
 
 
