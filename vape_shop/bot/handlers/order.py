@@ -2,12 +2,12 @@ import os
 import re
 import logging
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
 from bot.states.order_states import OrderForm
-from database.queries import get_all_products, get_product_by_id, add_customer
+from database.queries import get_product_by_id
 import aiosqlite
 
 router = Router()
@@ -28,13 +28,35 @@ def confirm_keyboard() -> InlineKeyboardMarkup:
 def skip_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Пропустити", callback_data="order_skip_notes")],
+        [InlineKeyboardButton(text="❌ Скасувати", callback_data="order_cancel")],
     ])
 
 
-def payment_method_keyboard() -> InlineKeyboardMarkup:
+def cancel_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Скасувати замовлення", callback_data="order_cancel")],
+    ])
+
+
+def delivery_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚚 Нова Пошта",  callback_data="delivery_nova_poshta")],
+        [InlineKeyboardButton(text="🏠 Самовивіз",   callback_data="delivery_pickup")],
+        [InlineKeyboardButton(text="❌ Скасувати",   callback_data="order_cancel")],
+    ])
+
+
+def payment_method_keyboard(delivery: str = "nova_poshta") -> InlineKeyboardMarkup:
+    if delivery == "pickup":
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Оплата на картку", callback_data="pay_method_card")],
+            [InlineKeyboardButton(text="💵 Готівка",          callback_data="pay_method_cash")],
+            [InlineKeyboardButton(text="❌ Скасувати",        callback_data="order_cancel")],
+        ])
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="💳 Оплата на картку",  callback_data="pay_method_card")],
         [InlineKeyboardButton(text="📦 Накладений платіж", callback_data="pay_method_cod")],
+        [InlineKeyboardButton(text="❌ Скасувати",         callback_data="order_cancel")],
     ])
 
 
@@ -112,7 +134,8 @@ async def order_from_catalog(callback: CallbackQuery, state: FSMContext):
     await state.set_state(OrderForm.choosing_quantity)
     await callback.message.answer(
         f"Ти обрав: <b>{product['name']}</b> — {product['price']} грн\n\n"
-        "Скільки штук хочеш замовити?"
+        "Скільки штук хочеш замовити?",
+        reply_markup=cancel_keyboard()
     )
     await callback.answer()
 
@@ -135,7 +158,8 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
     await state.set_state(OrderForm.choosing_quantity)
     await callback.message.answer(
         f"Ти обрав: <b>{product['name']}</b> — {product['price']} грн\n\n"
-        "Скільки штук хочеш замовити?"
+        "Скільки штук хочеш замовити?",
+        reply_markup=cancel_keyboard()
     )
     await callback.answer()
 
@@ -144,20 +168,32 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
 @router.message(OrderForm.choosing_quantity)
 async def choose_quantity(message: Message, state: FSMContext):
     if not message.text or not message.text.isdigit() or int(message.text) < 1:
-        await message.answer("Введи кількість цифрами, наприклад: 1")
+        await message.answer("Введи кількість цифрами, наприклад: 1", reply_markup=cancel_keyboard())
         return
 
     quantity = int(message.text)
     data = await state.get_data()
+
+    # Перевірити наявність
+    product = await get_product_by_id(data['product_id'])
+    if not product or product['stock'] < quantity:
+        available = product['stock'] if product else 0
+        await message.answer(
+            f"На жаль, доступно лише <b>{available} шт</b>.\n"
+            "Введи меншу кількість:",
+            reply_markup=cancel_keyboard()
+        )
+        return
+
     total = quantity * data['product_price']
 
     await state.update_data(quantity=quantity, total=total)
-    await state.set_state(OrderForm.entering_address)
+    await state.set_state(OrderForm.entering_phone)
     await message.answer(
         f"Кількість: {quantity} шт — {total} грн\n\n"
-        "Введи адресу доставки:\n"
-        "<i>Місто + номер відділення Нової Пошти</i>\n"
-        "Наприклад: Одеса, НП №12"
+        "Введи номер телефону:\n"
+        "<i>0981234567 або +380981234567</i>",
+        reply_markup=cancel_keyboard()
     )
 
 
@@ -165,32 +201,10 @@ async def choose_quantity(message: Message, state: FSMContext):
 @router.message(OrderForm.entering_address)
 async def enter_address(message: Message, state: FSMContext):
     if not message.text or len(message.text.strip()) < 5:
-        await message.answer("Введи повну адресу (місто + відділення НП)")
+        await message.answer("Введи повну адресу (місто + відділення НП)", reply_markup=cancel_keyboard())
         return
 
     await state.update_data(address=message.text.strip())
-    await state.set_state(OrderForm.entering_phone)
-    await message.answer(
-        "Введи номер телефону для відділення НП:\n"
-        "<i>Можна в будь-якому форматі:</i>\n"
-        "0981234567\n"
-        "+380981234567"
-    )
-
-
-# ── Телефон ──
-@router.message(OrderForm.entering_phone)
-async def enter_phone(message: Message, state: FSMContext):
-    phone_raw = message.text.strip().replace(" ", "").replace("-", "")
-    if not PHONE_RE.match(phone_raw):
-        await message.answer(
-            "Некоректний номер. Введи у одному з форматів:\n"
-            "0981234567\n"
-            "+380981234567"
-        )
-        return
-
-    await state.update_data(phone=phone_raw)
     await state.set_state(OrderForm.entering_notes)
     await message.answer(
         "Є коментар до замовлення? (наприклад: смак, міцність нікотину)\n"
@@ -199,14 +213,67 @@ async def enter_phone(message: Message, state: FSMContext):
     )
 
 
+# ── Телефон ──
+@router.message(OrderForm.entering_phone)
+async def enter_phone(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer("Введи номер телефону текстом:", reply_markup=cancel_keyboard())
+        return
+    phone_raw = message.text.strip().replace(" ", "").replace("-", "")
+    if not PHONE_RE.match(phone_raw):
+        await message.answer(
+            "Некоректний номер. Введи у одному з форматів:\n"
+            "0981234567\n"
+            "+380981234567",
+            reply_markup=cancel_keyboard()
+        )
+        return
+
+    await state.update_data(phone=phone_raw)
+    await state.set_state(OrderForm.choosing_delivery)
+    await message.answer(
+        "Обери спосіб отримання:",
+        reply_markup=delivery_keyboard()
+    )
+
+
+# ── Вибір доставки ──
+@router.callback_query(F.data.startswith("delivery_"))
+async def choose_delivery(callback: CallbackQuery, state: FSMContext):
+    delivery = callback.data.replace("delivery_", "")
+    await state.update_data(delivery=delivery)
+
+    if delivery == "pickup":
+        pickup_address = os.getenv("PICKUP_ADDRESS", "уточніть у продавця")
+        await state.update_data(address="Самовивіз")
+        await state.set_state(OrderForm.entering_notes)
+        await callback.message.answer(
+            f"🏠 <b>Самовивіз</b>\n"
+            f"📍 Адреса: {pickup_address}\n\n"
+            "Є коментар до замовлення?\n"
+            "Або натисни кнопку щоб пропустити.",
+            reply_markup=skip_keyboard()
+        )
+    else:
+        await state.set_state(OrderForm.entering_address)
+        await callback.message.answer(
+            "Введи адресу доставки:\n"
+            "<i>Місто + номер відділення Нової Пошти</i>\n"
+            "Наприклад: Одеса, НП №12",
+            reply_markup=cancel_keyboard()
+        )
+    await callback.answer()
+
+
 # ── Пропустити коментар ──
 @router.callback_query(F.data == "order_skip_notes")
 async def skip_notes(callback: CallbackQuery, state: FSMContext):
     await state.update_data(notes="")
+    data = await state.get_data()
     await state.set_state(OrderForm.choosing_payment)
     await callback.message.answer(
         "Обери спосіб оплати:",
-        reply_markup=payment_method_keyboard()
+        reply_markup=payment_method_keyboard(data.get('delivery', 'nova_poshta'))
     )
     await callback.answer()
 
@@ -215,10 +282,11 @@ async def skip_notes(callback: CallbackQuery, state: FSMContext):
 @router.message(OrderForm.entering_notes)
 async def enter_notes(message: Message, state: FSMContext):
     await state.update_data(notes=message.text.strip() if message.text else "")
+    data = await state.get_data()
     await state.set_state(OrderForm.choosing_payment)
     await message.answer(
         "Обери спосіб оплати:",
-        reply_markup=payment_method_keyboard()
+        reply_markup=payment_method_keyboard(data.get('delivery', 'nova_poshta'))
     )
 
 
@@ -236,20 +304,25 @@ async def choose_payment(callback: CallbackQuery, state: FSMContext):
 async def show_confirmation(message: Message, state: FSMContext):
     data = await state.get_data()
     method = data.get('payment_method', 'card')
+    delivery = data.get('delivery', 'nova_poshta')
 
     if method == 'card':
         card = os.getenv("PAYMENT_CARD", "").strip()
         payment_name = os.getenv("PAYMENT_NAME", "").strip()
         payment_text = f"💳 Картка: <code>{card}</code>\nОтримувач: {payment_name}"
+    elif method == 'cash':
+        payment_text = "💵 Готівка при самовивізі"
     else:
         payment_text = "📦 Накладений платіж (оплата при отриманні)"
+
+    delivery_text = "🏠 Самовивіз" if delivery == "pickup" else f"🚚 Нова Пошта: {data['address']}"
 
     text = (
         "📋 <b>Перевір замовлення:</b>\n\n"
         f"Товар: {data['product_name']}\n"
         f"Кількість: {data['quantity']} шт\n"
         f"Сума: {data['total']} грн\n"
-        f"Адреса: {data['address']}\n"
+        f"Доставка: {delivery_text}\n"
         f"Телефон: {data['phone']}\n"
     )
     if data.get('notes'):
@@ -263,6 +336,7 @@ async def show_confirmation(message: Message, state: FSMContext):
 PAYMENT_LABELS = {
     "card": "💳 Картка",
     "cod":  "📦 Накладений платіж",
+    "cash": "💵 Готівка",
 }
 
 
@@ -281,8 +355,8 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext):
             row = await cursor.fetchone()
             customer_id = row[0] if row else None
 
-        # Для картки — статус "awaiting_payment", залишок поки не чіпаємо
-        # Для накладеного — статус "new", залишок зменшуємо одразу
+        # Картка — чекаємо скріншот, залишок не чіпаємо
+        # Накладений / Готівка — одразу "new", залишок зменшуємо
         initial_status = "awaiting_payment" if method == "card" else "new"
 
         cursor = await db.execute(
@@ -296,7 +370,7 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext):
             (order_id, data['product_id'], data['quantity'], data['product_price'])
         )
 
-        # Зменшуємо залишок лише для накладеного платежу
+        # Зменшуємо залишок для накладеного та готівки
         if method != "card":
             await db.execute(
                 "UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?",
@@ -319,6 +393,9 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext):
     admin_ids = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
     payment_label = PAYMENT_LABELS.get(method, method)
 
+    delivery = data.get('delivery', 'nova_poshta')
+    delivery_label = "🏠 Самовивіз" if delivery == "pickup" else f"🚚 НП: {data['address']}"
+
     for admin_id in admin_ids:
         try:
             await callback.bot.send_message(
@@ -327,7 +404,7 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext):
                 f"Товар: {data['product_name']}\n"
                 f"Кількість: {data['quantity']} шт\n"
                 f"Сума: {data['total']} грн\n"
-                f"Адреса: {data['address']}\n"
+                f"Доставка: {delivery_label}\n"
                 f"Телефон: {data['phone']}\n"
                 f"Коментар: {data.get('notes', '—')}\n"
                 f"Оплата: {payment_label}\n"
@@ -353,8 +430,18 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text="🚫 Скасувати замовлення", callback_data=f"cancel_order_{order_id}")]
             ])
         )
+    elif method == 'cash':
+        pickup_address = os.getenv("PICKUP_ADDRESS", "уточніть у продавця")
+        await state.clear()
+        await callback.message.answer(
+            f"✅ Замовлення #{order_id} прийнято!\n\n"
+            f"🏠 Самовивіз: {pickup_address}\n"
+            "💵 Оплата готівкою при отриманні.\n"
+            "Зв'яжемось для уточнення часу. Дякуємо! 🙏",
+            reply_markup=cancel_kb
+        )
     else:
-        # Накладений — одразу завершуємо
+        # Накладений платіж
         await state.clear()
         await callback.message.answer(
             f"✅ Замовлення #{order_id} прийнято!\n\n"

@@ -66,7 +66,7 @@ async def confirm_repeat(callback: CallbackQuery):
         async with db.execute("""
             SELECT o.customer_id, o.address, o.phone, o.notes,
                    oi.product_id, oi.quantity, oi.price_at_order,
-                   p.price as current_price, p.stock, p.name
+                   p.price as current_price, p.stock, p.name, p.is_active
             FROM orders o
             LEFT JOIN order_items oi ON oi.order_id = o.id
             LEFT JOIN products p ON oi.product_id = p.id
@@ -76,6 +76,13 @@ async def confirm_repeat(callback: CallbackQuery):
 
         if not orig:
             await callback.answer("Замовлення не знайдено", show_alert=True)
+            return
+
+        if orig['is_active'] == 0:
+            await callback.answer(
+                f"На жаль, {orig['name']} більше не доступний.",
+                show_alert=True
+            )
             return
 
         if orig['stock'] == 0:
