@@ -36,6 +36,34 @@ async def products_list(request: Request, session: str = Depends(verify_session)
     })
 
 
+@router.post("/add")
+async def add_product(
+    name: str = Form(...),
+    description: str = Form(""),
+    category: str = Form("liquids"),
+    price: float = Form(...),
+    old_price: str = Form(""),
+    stock: int = Form(...),
+    session: str = Depends(verify_session),
+):
+    if not session:
+        return RedirectResponse(url="/login")
+
+    try:
+        old_price_val = float(old_price) if old_price.strip() else None
+    except ValueError:
+        old_price_val = None
+
+    async with aiosqlite.connect(DATABASE_URL) as db:
+        await db.execute(
+            "INSERT INTO products (name, description, category, price, old_price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)",
+            (name, description, category, price, old_price_val, stock)
+        )
+        await db.commit()
+
+    return RedirectResponse(url="/products", status_code=302)
+
+
 @router.post("/{product_id}/edit")
 async def edit_product(
     product_id: int,
@@ -43,15 +71,23 @@ async def edit_product(
     description: str = Form(""),
     price: float = Form(...),
     stock: int = Form(...),
+    old_price: str = Form(""),
+    is_new: str = Form(""),
+    is_hit: str = Form(""),
     session: str = Depends(verify_session),
 ):
     if not session:
         return RedirectResponse(url="/login")
 
+    try:
+        old_price_val = float(old_price) if old_price.strip() else None
+    except ValueError:
+        old_price_val = None
+
     async with aiosqlite.connect(DATABASE_URL) as db:
         await db.execute(
-            "UPDATE products SET name=?, description=?, price=?, stock=? WHERE id=?",
-            (name, description, price, stock, product_id)
+            "UPDATE products SET name=?, description=?, price=?, stock=?, old_price=?, is_new=?, is_hit=? WHERE id=?",
+            (name, description, price, stock, old_price_val, 1 if is_new else 0, 1 if is_hit else 0, product_id)
         )
         await db.commit()
 

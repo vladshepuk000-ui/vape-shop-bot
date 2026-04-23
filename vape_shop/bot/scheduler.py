@@ -145,6 +145,38 @@ async def send_weekly_report(bot: Bot):
             logger.error(f"Не вдалось надіслати звіт адміну {admin_id}: {e}")
 
 
+async def send_daily_site_report(bot: Bot):
+    """Щоденний звіт по сайту о 23:00."""
+    admin_ids = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
+    if not admin_ids:
+        return
+
+    from datetime import date
+    today = date.today().isoformat()
+
+    async with aiosqlite.connect(DATABASE_URL) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT visits, bot_clicks FROM site_stats WHERE date = ?", (today,)
+        ) as cursor:
+            row = await cursor.fetchone()
+
+    visits = row["visits"] if row else 0
+    bot_clicks = row["bot_clicks"] if row else 0
+
+    report = (
+        f"🌐 <b>Звіт по сайту за сьогодні</b>\n\n"
+        f"👁 Відвідувань: <b>{visits}</b>\n"
+        f"🛒 Перейшли в бот: <b>{bot_clicks}</b>"
+    )
+
+    for admin_id in admin_ids:
+        try:
+            await bot.send_message(admin_id, report, parse_mode="HTML")
+        except Exception as e:
+            logger.error(f"Помилка надсилання звіту: {e}")
+
+
 def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone="Europe/Kiev")
 
@@ -178,6 +210,16 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
         minute=0,
         args=[bot],
         id="weekly_report"
+    )
+
+    # Щоденний звіт по сайту — о 23:00
+    scheduler.add_job(
+        send_daily_site_report,
+        trigger="cron",
+        hour=23,
+        minute=0,
+        args=[bot],
+        id="daily_site_report"
     )
 
     return scheduler
