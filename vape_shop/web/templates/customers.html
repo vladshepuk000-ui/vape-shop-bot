@@ -37,7 +37,7 @@
                     <span class="badge badge-cancelled">✗</span>
                     {% endif %}
                 </td>
-                <td class="text-muted">{{ c.first_seen[:10] if c.first_seen else "—" }}</td>
+                <td class="text-muted">{{ c.first_seen.strftime('%Y-%m-%d') if c.first_seen else "—" }}</td>
             </tr>
             {% endfor %}
         </tbody>
