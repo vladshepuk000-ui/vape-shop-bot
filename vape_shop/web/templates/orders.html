@@ -15,15 +15,16 @@
         <h2>{{ orders|length }} замовлень</h2>
     </div>
     {% if orders %}
+    <div style="overflow-x:auto;">
     <table>
         <thead>
             <tr>
                 <th>#</th>
                 <th>Клієнт</th>
-                <th>Телефон</th>
+                <th class="hide-mobile">Телефон</th>
                 <th>Сума</th>
                 <th>Статус</th>
-                <th>Дата</th>
+                <th class="hide-mobile">Дата</th>
                 <th></th>
             </tr>
         </thead>
@@ -32,17 +33,24 @@
             <tr>
                 <td>#{{ o.id }}</td>
                 <td>{{ "@" + o.username if o.username else "id:" + o.telegram_id|string }}</td>
-                <td class="text-muted">{{ o.phone or "—" }}</td>
+                <td class="text-muted hide-mobile">{{ o.phone or "—" }}</td>
                 <td>{{ "%.0f"|format(o.total_price) }} грн</td>
                 <td><span class="badge badge-{{ o.status }}">{{ status_map.get(o.status, o.status) }}</span></td>
-                <td class="text-muted">{{ o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else '' }}</td>
+                <td class="text-muted hide-mobile">{{ o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else '' }}</td>
                 <td><a href="/orders/{{ o.id }}" class="btn btn-ghost btn-sm">Деталі</a></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <div class="empty">Немає замовлень</div>
     {% endif %}
 </div>
+
+<style>
+@media (max-width: 600px) {
+    .hide-mobile { display: none; }
+}
+</style>
 {% endblock %}
