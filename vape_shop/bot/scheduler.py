@@ -62,7 +62,7 @@ async def send_monday_broadcast(bot: Bot):
 
 async def send_21day_reminders(bot: Bot):
     """Нагадування клієнтам які не замовляли 21+ днів."""
-    cutoff = (datetime.now() - timedelta(days=21)).strftime("%Y-%m-%d %H:%M:%S")
+    cutoff = datetime.now() - timedelta(days=21)
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
@@ -98,7 +98,7 @@ async def send_weekly_report(bot: Bot):
     if not admin_ids:
         return
 
-    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+    week_ago = datetime.now() - timedelta(days=7)
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
