@@ -547,7 +547,7 @@ async def cmd_report(message: Message):
     for tip in tips:
         text += f"   • {tip}\n"
 
-    await message.answer(text)
+    await message.answer(text, parse_mode="HTML")
 
 
 # ── /removeproduct — видалити товар ──

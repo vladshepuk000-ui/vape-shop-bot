@@ -77,6 +77,7 @@ async def send_21day_reminders(bot: Bot):
         await conn.close()
 
     sent = 0
+    notified = []
     log_conn = await asyncpg.connect(DATABASE_URL)
     try:
         for c in customers:
@@ -90,6 +91,7 @@ async def send_21day_reminders(bot: Bot):
                     "INSERT INTO reminder_logs (telegram_id, username) VALUES ($1, $2)",
                     c['telegram_id'], c.get('username')
                 )
+                notified.append(c)
                 sent += 1
             except Exception:
                 pass
@@ -99,7 +101,7 @@ async def send_21day_reminders(bot: Bot):
     if sent:
         logger.info(f"Нагадування 18 днів: надіслано {sent} клієнтам")
         admin_ids = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
-        usernames = [f"@{c['username']}" if c['username'] else f"id:{c['telegram_id']}" for c in customers[:sent]]
+        usernames = [f"@{c['username']}" if c['username'] else f"id:{c['telegram_id']}" for c in notified]
         report = f"📩 Нагадування відправлено {sent} клієнтам:\n" + "\n".join(usernames)
         for admin_id in admin_ids:
             try:
@@ -288,7 +290,7 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
         id="monday_broadcast"
     )
 
-    # Нагадування 21 день — щодня о 10:00
+    # Нагадування 18 днів — щодня о 10:00
     scheduler.add_job(
         send_21day_reminders,
         trigger="cron",
