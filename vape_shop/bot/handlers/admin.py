@@ -526,6 +526,26 @@ async def cmd_report(message: Message):
         for p in low_stock:
             icon = "🔴" if p['stock'] == 0 else "🟡"
             text += f"   {icon} {p['name']} — {p['stock']} шт\n"
+        text += "\n"
+
+    # Поради
+    tips = []
+    if curr_rev < prev_rev and curr_orders < prev_orders:
+        tips.append("Падіння виручки і замовлень — варто зробити розсилку або акцію")
+    if curr_avg < prev_avg:
+        tips.append("Середній чек впав — спробуй запропонувати додаток до замовлення (картридж + жижа)")
+    if new_customers < prev_new_customers:
+        tips.append("Менше нових клієнтів — підштовхни існуючих поділитися посиланням на бот")
+    if any(p['stock'] == 0 for p in low_stock):
+        tips.append("Є товари з нульовим залишком — поповни щоб не втрачати замовлення")
+    if repeat_orders and curr_orders > 0 and (repeat_orders / curr_orders) >= 0.7:
+        tips.append("70%+ замовлень від постійних — добре утримання, але варто залучати нових")
+    if not tips:
+        tips.append("Все стабільно — продовжуй в тому ж темпі")
+
+    text += "💡 <b>Поради:</b>\n"
+    for tip in tips:
+        text += f"   • {tip}\n"
 
     await message.answer(text)
 
