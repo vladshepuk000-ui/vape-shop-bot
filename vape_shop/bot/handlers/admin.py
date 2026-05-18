@@ -373,7 +373,7 @@ async def cmd_restock(message: Message):
         await message.answer(f"Сповіщено {sent} клієнтів з листа очікування.")
 
 
-# ── /звіт — тижневий звіт ──
+# ── /zvit — тижневий звіт з аналізом ──
 @router.message(Command("zvit"))
 async def cmd_report(message: Message):
     if not is_admin(message.from_user.id):
@@ -381,101 +381,151 @@ async def cmd_report(message: Message):
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        # Загальна статистика за 7 днів
-        week_stats = await conn.fetchrow("""
+        # Цей тиждень
+        week = await conn.fetchrow("""
             SELECT
-                COUNT(*) as total_orders,
-                COALESCE(SUM(total_price), 0) as total_revenue,
-                COALESCE(AVG(total_price), 0) as avg_order
+                COUNT(*) FILTER (WHERE status != 'cancelled') as total_orders,
+                COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
+                COALESCE(SUM(total_price) FILTER (WHERE status != 'cancelled'), 0) as revenue,
+                COALESCE(AVG(total_price) FILTER (WHERE status != 'cancelled'), 0) as avg_order
             FROM orders
             WHERE created_at >= NOW() - INTERVAL '7 days'
-              AND status != 'cancelled'
         """)
 
-        # Порівняння з попереднім тижнем
-        prev_stats = await conn.fetchrow("""
-            SELECT COALESCE(SUM(total_price), 0) as prev_revenue
+        # Минулий тиждень
+        prev = await conn.fetchrow("""
+            SELECT
+                COUNT(*) FILTER (WHERE status != 'cancelled') as total_orders,
+                COALESCE(SUM(total_price) FILTER (WHERE status != 'cancelled'), 0) as revenue,
+                COALESCE(AVG(total_price) FILTER (WHERE status != 'cancelled'), 0) as avg_order
             FROM orders
             WHERE created_at >= NOW() - INTERVAL '14 days'
               AND created_at < NOW() - INTERVAL '7 days'
-              AND status != 'cancelled'
         """)
 
-        # Замовлення по статусах за тиждень
-        statuses = await conn.fetch("""
-            SELECT status, COUNT(*) as cnt
-            FROM orders
-            WHERE created_at >= NOW() - INTERVAL '7 days'
-            GROUP BY status
-            ORDER BY cnt DESC
-        """)
-
-        # Топ-3 товари за тиждень
-        top_products = await conn.fetch("""
+        # Топ-3 цього тижня
+        top_week = await conn.fetch("""
             SELECT p.name, SUM(oi.quantity) as sold, SUM(oi.quantity * oi.price_at_order) as revenue
             FROM order_items oi
             JOIN products p ON oi.product_id = p.id
             JOIN orders o ON oi.order_id = o.id
             WHERE o.created_at >= NOW() - INTERVAL '7 days'
               AND o.status != 'cancelled'
-            GROUP BY p.name
-            ORDER BY sold DESC
-            LIMIT 3
+            GROUP BY p.name ORDER BY sold DESC LIMIT 3
         """)
 
-        # Нові клієнти за тиждень
+        # Топ-3 минулого тижня (для порівняння)
+        top_prev = await conn.fetch("""
+            SELECT p.name, SUM(oi.quantity) as sold
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.created_at >= NOW() - INTERVAL '14 days'
+              AND o.created_at < NOW() - INTERVAL '7 days'
+              AND o.status != 'cancelled'
+            GROUP BY p.name ORDER BY sold DESC LIMIT 1
+        """)
+
+        # Нові клієнти
         new_customers = await conn.fetchval("""
+            SELECT COUNT(*) FROM customers WHERE first_seen >= NOW() - INTERVAL '7 days'
+        """)
+        prev_new_customers = await conn.fetchval("""
             SELECT COUNT(*) FROM customers
-            WHERE first_seen >= NOW() - INTERVAL '7 days'
+            WHERE first_seen >= NOW() - INTERVAL '14 days'
+              AND first_seen < NOW() - INTERVAL '7 days'
+        """)
+
+        # Повторні замовлення цього тижня
+        repeat_orders = await conn.fetchval("""
+            SELECT COUNT(DISTINCT o.customer_id)
+            FROM orders o
+            WHERE o.created_at >= NOW() - INTERVAL '7 days'
+              AND o.status != 'cancelled'
+              AND (SELECT COUNT(*) FROM orders o2
+                   WHERE o2.customer_id = o.customer_id
+                     AND o2.created_at < NOW() - INTERVAL '7 days') > 0
         """)
 
         # Товари що закінчуються
         low_stock = await conn.fetch("""
             SELECT name, stock FROM products
-            WHERE is_active = TRUE AND stock <= 3
-            ORDER BY stock
+            WHERE is_active = TRUE AND stock <= 3 ORDER BY stock
         """)
 
     finally:
         await conn.close()
 
-    # Динаміка відносно минулого тижня
-    prev_rev = float(prev_stats['prev_revenue'])
-    curr_rev = float(week_stats['total_revenue'])
-    if prev_rev > 0:
-        diff_pct = ((curr_rev - prev_rev) / prev_rev) * 100
-        trend = f"{'📈' if diff_pct >= 0 else '📉'} {diff_pct:+.0f}% vs минулий тиждень"
-    else:
-        trend = "📊 Перший тиждень даних"
+    def diff_str(curr, prev):
+        if prev == 0:
+            return ""
+        d = ((curr - prev) / prev) * 100
+        icon = "📈" if d >= 0 else "📉"
+        return f" {icon} {d:+.0f}%"
 
-    text = (
-        f"📊 <b>Звіт за 7 днів</b>\n"
-        f"{'─' * 28}\n\n"
-        f"💰 <b>Виручка:</b> {curr_rev:.0f} грн\n"
-        f"   {trend}\n\n"
-        f"🛒 <b>Замовлень:</b> {week_stats['total_orders']}\n"
-        f"💳 <b>Середній чек:</b> {week_stats['avg_order']:.0f} грн\n"
-        f"👤 <b>Нових клієнтів:</b> {new_customers}\n\n"
-    )
+    curr_rev = float(week['revenue'])
+    prev_rev = float(prev['revenue'])
+    curr_orders = int(week['total_orders'])
+    prev_orders = int(prev['total_orders'])
+    curr_avg = float(week['avg_order'])
+    prev_avg = float(prev['avg_order'])
 
-    if statuses:
-        text += "📋 <b>По статусах:</b>\n"
-        for s in statuses:
-            label = STATUS_MAP.get(s['status'], s['status'])
-            text += f"   {label}: {s['cnt']}\n"
-        text += "\n"
+    text = f"📊 <b>Звіт за 7 днів</b>\n{'─' * 28}\n\n"
 
-    if top_products:
+    # Виручка
+    text += f"💰 <b>Виручка:</b> {curr_rev:.0f} грн{diff_str(curr_rev, prev_rev)}\n"
+    text += f"   Минулий тиждень: {prev_rev:.0f} грн\n\n"
+
+    # Замовлення
+    text += f"🛒 <b>Замовлень:</b> {curr_orders}{diff_str(curr_orders, prev_orders)}\n"
+    text += f"   Минулий тиждень: {prev_orders}\n"
+    if week['cancelled']:
+        text += f"   Скасовано: {week['cancelled']}\n"
+    text += "\n"
+
+    # Середній чек
+    text += f"💳 <b>Середній чек:</b> {curr_avg:.0f} грн{diff_str(curr_avg, prev_avg)}\n"
+    text += f"   Минулий тиждень: {prev_avg:.0f} грн\n\n"
+
+    # Клієнти
+    text += f"👤 <b>Нових клієнтів:</b> {new_customers}{diff_str(new_customers, prev_new_customers)}\n"
+    if repeat_orders:
+        text += f"🔄 <b>Повторних покупців:</b> {repeat_orders}\n"
+    text += "\n"
+
+    # Топ товари
+    if top_week:
+        prev_top_name = top_prev[0]['name'] if top_prev else None
         text += "🏆 <b>Топ товари:</b>\n"
-        for i, p in enumerate(top_products, 1):
-            text += f"   {i}. {p['name']} — {p['sold']} шт ({p['revenue']:.0f} грн)\n"
+        for i, p in enumerate(top_week, 1):
+            leader = " 👑" if i == 1 and prev_top_name and p['name'] != prev_top_name else ""
+            text += f"   {i}. {p['name']} — {p['sold']} шт ({p['revenue']:.0f} грн){leader}\n"
+        if prev_top_name:
+            text += f"   Лідер минулого тижня: {prev_top_name}\n"
         text += "\n"
 
+    # Аналіз
+    text += "🔍 <b>Аналіз:</b>\n"
+    if curr_rev > prev_rev:
+        text += f"   ✅ Виручка зросла на {curr_rev - prev_rev:.0f} грн\n"
+    elif curr_rev < prev_rev:
+        text += f"   ⚠️ Виручка впала на {prev_rev - curr_rev:.0f} грн\n"
+    if new_customers > prev_new_customers:
+        text += f"   ✅ Більше нових клієнтів ніж минулого тижня\n"
+    elif new_customers < prev_new_customers:
+        text += f"   ⚠️ Менше нових клієнтів ніж минулого тижня\n"
+    if curr_avg > prev_avg:
+        text += f"   ✅ Середній чек виріс\n"
+    elif curr_avg < prev_avg:
+        text += f"   ⚠️ Середній чек впав\n"
+    text += "\n"
+
+    # Залишки
     if low_stock:
         text += "⚠️ <b>Закінчується:</b>\n"
         for p in low_stock:
-            stock_icon = "🔴" if p['stock'] == 0 else "🟡"
-            text += f"   {stock_icon} {p['name']} — {p['stock']} шт\n"
+            icon = "🔴" if p['stock'] == 0 else "🟡"
+            text += f"   {icon} {p['name']} — {p['stock']} шт\n"
 
     await message.answer(text)
 
