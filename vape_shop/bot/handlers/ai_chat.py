@@ -70,12 +70,27 @@ async def get_catalog_context() -> str:
         await conn.close()
 
     if not products:
-        return "Каталог порожній."
+        return "Каталог порожній. Товарів немає."
 
-    lines = ["Товари (тільки ці існують):"]
-    for p in products:
-        avail = "✓" if p["stock"] > 0 else "✗"
-        lines.append(f"{avail} {p['name']} — {p['price']} грн")
+    in_stock = [p for p in products if p["stock"] > 0]
+    out_stock = [p for p in products if p["stock"] == 0]
+
+    lines = [
+        "=== АКТУАЛЬНИЙ КАТАЛОГ (дані з бази даних, оновлено щойно) ===",
+        "",
+        "В НАЯВНОСТІ (можна замовити):",
+    ]
+    for p in in_stock:
+        lines.append(f"  + {p['name']} — {p['price']} грн")
+
+    if out_stock:
+        lines.append("")
+        lines.append("НЕМАЄ В НАЯВНОСТІ (не можна замовити):")
+        for p in out_stock:
+            lines.append(f"  - {p['name']}")
+
+    lines.append("")
+    lines.append("ВАЖЛИВО: Не вигадуй інші товари. Є тільки те що вказано вище.")
     return "\n".join(lines)
 
 
