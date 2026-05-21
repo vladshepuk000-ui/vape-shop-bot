@@ -29,8 +29,11 @@ def categories_keyboard() -> InlineKeyboardMarkup:
 
 def brands_keyboard(brands: list) -> InlineKeyboardMarkup:
     buttons = []
-    for brand in brands:
-        label = "Інші рідини" if brand == "__no_brand__" else brand
+    for b in brands:
+        brand = b["brand"] if isinstance(b, dict) else b
+        in_stock = b.get("in_stock", 1) if isinstance(b, dict) else 1
+        name = "Інші рідини" if brand == "__no_brand__" else brand
+        label = f"✅ {name}" if in_stock else f"❌ {name} — немає в наявності"
         buttons.append([InlineKeyboardButton(text=label, callback_data=f"lbrand_{brand}")])
     buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="cat_back")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -65,18 +68,23 @@ async def get_liquid_brands() -> list:
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         rows = await conn.fetch("""
-            SELECT DISTINCT brand FROM products
+            SELECT brand,
+                   COUNT(*) FILTER (WHERE stock > 0) as in_stock
+            FROM products
             WHERE category = 'liquids' AND is_active = TRUE AND brand IS NOT NULL
+            GROUP BY brand
             ORDER BY brand
         """)
-        brands = [r['brand'] for r in rows]
-        # Перевірити чи є рідини без бренду
-        no_brand_count = await conn.fetchval("""
-            SELECT COUNT(*) FROM products
+        brands = [{"brand": r["brand"], "in_stock": r["in_stock"]} for r in rows]
+
+        no_brand = await conn.fetchrow("""
+            SELECT COUNT(*) FILTER (WHERE stock > 0) as in_stock,
+                   COUNT(*) as total
+            FROM products
             WHERE category = 'liquids' AND is_active = TRUE AND brand IS NULL
         """)
-        if no_brand_count:
-            brands.append("__no_brand__")
+        if no_brand and no_brand["total"]:
+            brands.append({"brand": "__no_brand__", "in_stock": no_brand["in_stock"]})
         return brands
     finally:
         await conn.close()
