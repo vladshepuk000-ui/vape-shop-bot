@@ -28,10 +28,10 @@ def categories_keyboard() -> InlineKeyboardMarkup:
 
 
 def brands_keyboard(brands: list) -> InlineKeyboardMarkup:
-    buttons = [
-        [InlineKeyboardButton(text=brand, callback_data=f"lbrand_{brand}")]
-        for brand in brands
-    ]
+    buttons = []
+    for brand in brands:
+        label = "Інші рідини" if brand == "__no_brand__" else brand
+        buttons.append([InlineKeyboardButton(text=label, callback_data=f"lbrand_{brand}")])
     buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="cat_back")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -67,7 +67,15 @@ async def get_liquid_brands() -> list:
             WHERE category = 'liquids' AND is_active = TRUE AND brand IS NOT NULL
             ORDER BY brand
         """)
-        return [r['brand'] for r in rows]
+        brands = [r['brand'] for r in rows]
+        # Перевірити чи є рідини без бренду
+        no_brand_count = await conn.fetchval("""
+            SELECT COUNT(*) FROM products
+            WHERE category = 'liquids' AND is_active = TRUE AND brand IS NULL
+        """)
+        if no_brand_count:
+            brands.append("__no_brand__")
+        return brands
     finally:
         await conn.close()
 
@@ -75,11 +83,18 @@ async def get_liquid_brands() -> list:
 async def get_products_by_brand(brand: str) -> list:
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        rows = await conn.fetch("""
-            SELECT * FROM products
-            WHERE category = 'liquids' AND brand = $1 AND is_active = TRUE
-            ORDER BY name
-        """, brand)
+        if brand == "__no_brand__":
+            rows = await conn.fetch("""
+                SELECT * FROM products
+                WHERE category = 'liquids' AND brand IS NULL AND is_active = TRUE
+                ORDER BY name
+            """)
+        else:
+            rows = await conn.fetch("""
+                SELECT * FROM products
+                WHERE category = 'liquids' AND brand = $1 AND is_active = TRUE
+                ORDER BY name
+            """, brand)
         return [dict(r) for r in rows]
     finally:
         await conn.close()
@@ -196,16 +211,33 @@ async def show_brand_products(callback):
         await callback.answer("Товарів цього виробника немає", show_alert=True)
         return
 
-    back_callback = f"lbrand_{brand}"
+    label = "Інші рідини" if brand == "__no_brand__" else brand
     try:
         await callback.message.edit_text(
-            f"🧴 {brand}:",
-            reply_markup=products_keyboard(products, back_callback)
+            f"🧴 {label}:",
+            reply_markup=products_keyboard(products, "back_to_brands")
         )
     except Exception:
         await callback.message.answer(
-            f"🧴 {brand}:",
-            reply_markup=products_keyboard(products, back_callback)
+            f"🧴 {label}:",
+            reply_markup=products_keyboard(products, "back_to_brands")
+        )
+    await callback.answer()
+
+
+# ── Назад з вкусів до списку брендів ──
+@router.callback_query(F.data == "back_to_brands")
+async def back_to_brands(callback):
+    brands = await get_liquid_brands()
+    try:
+        await callback.message.edit_text(
+            "🧴 Оберіть виробника:",
+            reply_markup=brands_keyboard(brands)
+        )
+    except Exception:
+        await callback.message.answer(
+            "🧴 Оберіть виробника:",
+            reply_markup=brands_keyboard(brands)
         )
     await callback.answer()
 
@@ -213,9 +245,12 @@ async def show_brand_products(callback):
 # ── Картка товару ──
 @router.callback_query(F.data.startswith("product_"))
 async def show_product(callback):
-    parts = callback.data.replace("product_", "").split("_", 1)
-    product_id = int(parts[0])
-    back_callback = parts[1] if len(parts) > 1 else "cat_back"
+    # format: product_{id}_{back_callback}
+    # back_callback може містити _ тому split лише перший раз
+    data = callback.data[len("product_"):]
+    first_underscore = data.index("_")
+    product_id = int(data[:first_underscore])
+    back_callback = data[first_underscore + 1:] if first_underscore + 1 < len(data) else "cat_back"
     product = await get_product_by_id(product_id)
 
     if not product:
