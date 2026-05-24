@@ -6,4 +6,3 @@ __pycache__/
 *.sqlite3
 venv/
 .venv/
-assets/images/
