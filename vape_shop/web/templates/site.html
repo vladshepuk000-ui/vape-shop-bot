@@ -134,10 +134,10 @@
 
         /* HERO */
         .hero {
-            min-height: 100vh;
+            min-height: 82vh;
             background: linear-gradient(135deg, #0d0221 0%, #1a0533 30%, #2d1b69 60%, #0d0221 100%);
             display: flex; align-items: center; justify-content: center;
-            text-align: center; padding: 80px 5% 60px;
+            text-align: center; padding: 100px 5% 60px;
             position: relative; overflow: hidden;
         }
         .hero::before {
@@ -194,10 +194,11 @@
 
         /* CATEGORIES */
         .cats { background: #fff; }
-        .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 48px; }
+        .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; max-width: 960px; margin-left: auto; margin-right: auto; }
         .cat-card {
             border-radius: 16px; border: 1px solid #e5e7eb;
             transition: all 0.3s; cursor: default; background: #fff;
+            display: flex; flex-direction: column;
         }
         .cat-card:hover { border-color: #a78bfa; transform: translateY(-4px); box-shadow: 0 12px 32px rgba(167,139,250,0.15); }
         .cat-icon { font-size: 48px; margin-bottom: 16px; }
@@ -214,7 +215,7 @@
             font-size: 22px; font-weight: 800; margin: 0 auto 16px;
         }
         .step h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-        .step p { color: #6b7280; font-size: 15px; line-height: 1.6; }
+        .step p { color: #4b5563; font-size: 15px; line-height: 1.6; }
 
         /* REVIEWS */
         /* REVIEWS SLIDER */
@@ -260,7 +261,7 @@
         .delivery-card { background: #fff; border-radius: 14px; padding: 24px; border: 1px solid #e5e7eb; }
         .delivery-card .icon { font-size: 32px; margin-bottom: 12px; }
         .delivery-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-        .delivery-card p { color: #6b7280; font-size: 14px; line-height: 1.6; }
+        .delivery-card p { color: #4b5563; font-size: 14px; line-height: 1.6; }
 
         /* CONTACTS */
         .contacts { background: linear-gradient(135deg, #0a0a1e, #1a1a3e); color: #fff; text-align: center; }
@@ -636,9 +637,9 @@
                 {% endif %}
             </div>
             <!-- Інфо -->
-            <div class="product-info-wrap" style="padding:14px 16px;">
+            <div class="product-info-wrap" style="padding:14px 16px; display:flex; flex-direction:column; flex:1;">
                 <h3 style="font-size:14px; font-weight:700; margin-bottom:8px; line-height:1.4;">{{ p.name }}</h3>
-                <div>
+                <div style="margin-top:auto;">
                     <div style="white-space:nowrap; margin-bottom:4px;">
                         {% if p.old_price and p.old_price > p.price %}
                         <span style="font-size:13px; color:#9ca3af; text-decoration:line-through; margin-right:4px;">{{ "%.0f"|format(p.old_price) }} грн</span>
@@ -646,14 +647,18 @@
                         <span style="font-size:18px; font-weight:800; color:#a78bfa;">{{ "%.0f"|format(p.price) }} грн</span>
                     </div>
                     <span style="font-size:12px; color:#9ca3af;">Детальніше →</span>
+                    {% if p.stock > 0 %}
+                    <button onclick="event.stopPropagation(); addToCart({{ p.id }}, '{{ p.name|replace("'", "\\'") }}', {{ p.price }})"
+                        style="margin-top:8px; width:100%; background:#f3f0ff; color:#7c3aed; border:none; padding:7px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.2s;"
+                        onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#f3f0ff'">
+                        🛒 В кошик
+                    </button>
+                    {% else %}
+                    <button disabled style="margin-top:8px; width:100%; background:#f9fafb; color:#9ca3af; border:1px solid #e5e7eb; padding:7px; border-radius:8px; font-size:13px; font-weight:600; cursor:not-allowed;">
+                        ✕ Немає в наявності
+                    </button>
+                    {% endif %}
                 </div>
-                {% if p.stock > 0 %}
-                <button onclick="event.stopPropagation(); addToCart({{ p.id }}, '{{ p.name|replace("'", "\\'") }}', {{ p.price }})"
-                    style="margin-top:8px; width:100%; background:#f3f0ff; color:#7c3aed; border:none; padding:7px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.2s;"
-                    onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#f3f0ff'">
-                    🛒 В кошик
-                </button>
-                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -1334,6 +1339,13 @@ function closeMenu() {
     }
 
     window.slideReview = function(dir) { goTo(current + dir); };
+
+    // Автопрокрутка
+    if (total > 1) {
+        let autoplay = setInterval(() => goTo(current + 1), 5000);
+        track.addEventListener('touchstart', () => clearInterval(autoplay), { passive: true });
+        dotsWrap.addEventListener('click', () => { clearInterval(autoplay); autoplay = setInterval(() => goTo(current + 1), 5000); });
+    }
 
     // Свайп на мобільному
     let startX = 0;
