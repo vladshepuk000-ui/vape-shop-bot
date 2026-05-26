@@ -20,6 +20,7 @@ app = FastAPI(title="Vape Shop Admin", lifespan=lifespan)
 BASE_DIR = os.path.dirname(__file__)
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.state.templates = templates
 
 from web.routes import auth, dashboard, orders, products, customers, broadcasts, site, content_manager
 app.include_router(auth.router)

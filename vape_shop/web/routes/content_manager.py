@@ -2,12 +2,8 @@ import os
 import aiohttp
 import asyncpg
 from fastapi import APIRouter, Request, Depends, Form
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from web.auth_utils import verify_session
-
-BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
-templates = Jinja2Templates(directory=BASE_DIR)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
@@ -93,8 +89,8 @@ async def generate_text(system_prompt: str, product_description: str) -> str:
 @router.get("", response_class=HTMLResponse)
 async def content_manager_page(request: Request, session: str = Depends(verify_session)):
     if not session:
-        from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/login")
+    templates = request.app.state.templates
     return templates.TemplateResponse("content_manager.html", {"request": request})
 
 
