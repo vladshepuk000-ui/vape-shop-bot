@@ -94,7 +94,7 @@ async def generate_text(system_prompt: str, product_description: str) -> str:
 async def content_manager_page(request: Request, session: str = Depends(verify_session)):
     if not session:
         return RedirectResponse(url="/login")
-    return templates.TemplateResponse("content_manager.html", {"request": request})
+    return templates.TemplateResponse(request, "content_manager.html")
 
 
 @router.post("/generate", response_class=JSONResponse)
