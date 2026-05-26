@@ -109,7 +109,7 @@
         <div class="char-count" id="tgCount">0 символів</div>
         <div class="cm-actions">
             <button class="btn btn-regen btn-sm" onclick="regenerate('telegram')">🔄 Регенерувати</button>
-            <button class="btn btn-tg btn-sm" onclick="publishTelegram()">📤 Опублікувати в канал</button>
+            <button class="btn btn-tg btn-sm" onclick="publishTelegram()">📤 Розіслати клієнтам</button>
         </div>
     </div>
 
@@ -215,6 +215,10 @@ async function publishTelegram() {
     const text = document.getElementById('tgText').value.trim();
     if (!text) return;
 
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Надсилаю...';
+
     const formData = new FormData();
     formData.append('text', text);
 
@@ -222,12 +226,15 @@ async function publishTelegram() {
         const resp = await fetch('/content-manager/publish-telegram', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.ok) {
-            showAlert('✅ Пост опубліковано в Telegram-каналі!', 'success');
+            showAlert(`✅ Розсилку надіслано! ${data.sent} клієнтів отримали пост з кнопкою "Замовити".`, 'success');
         } else {
             showAlert(`❌ ${data.error}`, 'error');
         }
     } catch (err) {
         showAlert('Помилка публікації', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Розіслати клієнтам';
     }
 }
 
