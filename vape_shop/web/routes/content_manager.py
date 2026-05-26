@@ -90,8 +90,12 @@ async def generate_text(system_prompt: str, product_description: str) -> str:
 async def content_manager_page(request: Request, session: str = Depends(verify_session)):
     if not session:
         return RedirectResponse(url="/login")
-    templates = request.app.state.templates
-    return templates.TemplateResponse("content_manager.html", {"request": request})
+    try:
+        import traceback
+        templates = request.app.state.templates
+        return templates.TemplateResponse("content_manager.html", {"request": request})
+    except Exception as e:
+        return HTMLResponse(f"<pre style='color:red'>ERROR: {type(e).__name__}: {e}\n\n{traceback.format_exc()}</pre>")
 
 
 @router.post("/generate", response_class=JSONResponse)
