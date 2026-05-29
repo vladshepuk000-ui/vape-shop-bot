@@ -46,6 +46,7 @@ async def send_broadcast(
     request: Request,
     session: str = Depends(verify_session),
     text: str = Form(...),
+    add_button: str = Form(default="0"),
 ):
     if not session:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
@@ -53,7 +54,7 @@ async def send_broadcast(
         return JSONResponse({"error": "BOT_TOKEN не налаштований"}, status_code=500)
 
     reply_markup = None
-    if BOT_USERNAME:
+    if add_button == "1" and BOT_USERNAME:
         reply_markup = {
             "inline_keyboard": [[
                 {"text": "🛒 Замовити", "url": f"https://t.me/{BOT_USERNAME}"}

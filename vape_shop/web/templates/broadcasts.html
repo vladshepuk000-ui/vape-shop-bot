@@ -14,6 +14,12 @@
         <textarea id="broadcastText" class="form-control" rows="5" placeholder="Введи текст розсилки..."></textarea>
         <div style="font-size:12px; color:#9ca3af; margin-top:4px;" id="charCount">0 символів</div>
     </div>
+    <div class="form-group" style="margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:400;">
+            <input type="checkbox" id="addButton" style="width:16px; height:16px; cursor:pointer;">
+            Додати кнопку "🛒 Замовити" (для товарних постів)
+        </label>
+    </div>
     <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">📤 Розіслати всім клієнтам</button>
 </div>
 
@@ -76,6 +82,7 @@ async function sendBroadcast() {
 
     const formData = new FormData();
     formData.append('text', text);
+    formData.append('add_button', document.getElementById('addButton').checked ? '1' : '0');
 
     try {
         const resp = await fetch('/broadcasts/send', { method: 'POST', body: formData });
