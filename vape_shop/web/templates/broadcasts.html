@@ -1,11 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Розсилки{% endblock %}
-{% block page_title %}Розсилки{% endblock %}
+{% block page_title %}📢 Розсилки{% endblock %}
 
 {% block content %}
-<div class="card" style="margin-bottom:24px; max-width:600px;">
-    <div style="font-size:15px; margin-bottom:4px;">📢 Підписників: <strong>{{ subscribers }}</strong></div>
-    <div class="text-muted">Розсилки відправляються через Telegram бота командою /broadcast</div>
+
+<div id="alert" style="display:none; padding:12px 16px; border-radius:8px; font-size:14px; margin-bottom:16px;"></div>
+
+<div class="card" style="margin-bottom:24px; max-width:640px;">
+    <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">📤 Нова розсилка</h3>
+    <div style="font-size:13px; color:#6b7280; margin-bottom:12px;">Підписників: <strong style="color:#1a1a2e;">{{ subscribers }}</strong></div>
+    <div class="form-group">
+        <label>Текст повідомлення</label>
+        <textarea id="broadcastText" class="form-control" rows="5" placeholder="Введи текст розсилки..."></textarea>
+        <div style="font-size:12px; color:#9ca3af; margin-top:4px;" id="charCount">0 символів</div>
+    </div>
+    <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">📤 Розіслати всім клієнтам</button>
 </div>
 
 <div class="table-wrap">
@@ -39,4 +48,52 @@
     <div class="empty">Розсилок ще не було</div>
     {% endif %}
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('broadcastText').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length + ' символів';
+});
+
+function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.style.display = 'block';
+    el.style.background = type === 'success' ? '#d1fae5' : '#fee2e2';
+    el.style.color = type === 'success' ? '#065f46' : '#991b1b';
+    el.textContent = msg;
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+async function sendBroadcast() {
+    const text = document.getElementById('broadcastText').value.trim();
+    if (!text) { showAlert('Введи текст розсилки', 'error'); return; }
+
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Надсилаю...';
+
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+        const resp = await fetch('/broadcasts/send', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.ok) {
+            showAlert('✅ Розіслано ' + data.sent + ' клієнтам!', 'success');
+            document.getElementById('broadcastText').value = '';
+            document.getElementById('charCount').textContent = '0 символів';
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert('❌ ' + data.error, 'error');
+        }
+    } catch (e) {
+        showAlert('Помилка з\'єднання', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Розіслати всім клієнтам';
+    }
+}
+</script>
 {% endblock %}
