@@ -19,7 +19,9 @@ async def login_page(request: Request):
 
 
 @router.post("/login")
-async def login(request: Request, password: str = Form(...)):
+async def login(request: Request, password: str = Form(default="")):
+    if not password:
+        return templates.TemplateResponse(request, "login.html", {"error": "Введи пароль"})
     if password == ADMIN_PASSWORD:
         response = RedirectResponse(url="/", status_code=302)
         response.set_cookie("session", SESSION_TOKEN, httponly=True, max_age=86400 * 7)
