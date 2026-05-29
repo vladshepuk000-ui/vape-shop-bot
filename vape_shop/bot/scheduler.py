@@ -67,11 +67,16 @@ async def send_21day_reminders(bot: Bot):
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         customers = await conn.fetch("""
-            SELECT telegram_id, username FROM customers
-            WHERE is_subscribed = TRUE
-              AND last_order IS NOT NULL
-              AND last_order < $1
-              AND total_orders > 0
+            SELECT c.telegram_id, c.username FROM customers c
+            WHERE c.is_subscribed = TRUE
+              AND c.last_order IS NOT NULL
+              AND c.last_order < $1
+              AND c.total_orders > 0
+              AND NOT EXISTS (
+                  SELECT 1 FROM reminder_logs rl
+                  WHERE rl.telegram_id = c.telegram_id
+                    AND rl.sent_at > NOW() - INTERVAL '30 days'
+              )
         """, cutoff)
     finally:
         await conn.close()
