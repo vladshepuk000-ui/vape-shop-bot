@@ -128,8 +128,17 @@
         <div class="cm-actions">
             <button class="btn btn-regen btn-sm" onclick="regenerate('site')">🔄 Регенерувати</button>
             <button class="btn btn-sm" onclick="copyText('siteText')">📋 Копіювати</button>
+            <button class="btn btn-site btn-sm" onclick="addToSite()">🌐 Додати на сайт</button>
         </div>
     </div>
+</div>
+
+<!-- Опублікувати скрізь -->
+<div style="margin-top:16px; text-align:center; display:none;" id="publishAllRow">
+    <button class="btn btn-sm" style="background:#7c3aed; color:#fff; padding:10px 28px; font-size:15px;" onclick="publishAll()">
+        🚀 Опублікувати скрізь
+    </button>
+    <div style="font-size:12px; color:#9ca3af; margin-top:6px;">Telegram-розсилка + додати товар на сайт і в каталог бота</div>
 </div>
 
 {% endblock %}
@@ -200,6 +209,7 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
         updateCount('tgText', 'tgCount');
         updateCount('siteText', 'siteCount');
         document.getElementById('resultsGrid').style.display = 'grid';
+        document.getElementById('publishAllRow').style.display = 'block';
         document.getElementById('resultsGrid').scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
         showAlert('Помилка з\'єднання з сервером', 'error');
@@ -265,6 +275,77 @@ async function publishTelegram() {
 function copyText(id) {
     const text = document.getElementById(id).value;
     navigator.clipboard.writeText(text).then(() => showAlert('✅ Скопійовано!', 'success'));
+}
+
+function buildSiteFormData() {
+    const fd = new FormData();
+    fd.append('name', lastFormData.get('name'));
+    fd.append('category', lastFormData.get('category'));
+    fd.append('price', lastFormData.get('price') || '');
+    fd.append('site_text', document.getElementById('siteText').value);
+    const photoFile = document.getElementById('tgPhoto').files[0];
+    if (photoFile) fd.append('photo', photoFile);
+    return fd;
+}
+
+async function addToSite() {
+    if (!lastFormData) return;
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Додаю...';
+    try {
+        const resp = await fetch('/content-manager/add-product', { method: 'POST', body: buildSiteFormData() });
+        const data = await resp.json();
+        if (data.ok) {
+            showAlert('✅ Товар додано на сайт і в каталог бота!', 'success');
+        } else {
+            showAlert(`❌ ${data.error}`, 'error');
+        }
+    } catch (err) {
+        showAlert('Помилка додавання товару', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🌐 Додати на сайт';
+    }
+}
+
+async function publishAll() {
+    const text = document.getElementById('tgText').value.trim();
+    const siteText = document.getElementById('siteText').value.trim();
+    if (!text || !siteText) { showAlert('Спочатку згенеруй контент', 'error'); return; }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Публікую...';
+
+    const tgFd = new FormData();
+    tgFd.append('text', text);
+    const photoFile = document.getElementById('tgPhoto').files[0];
+    if (photoFile) tgFd.append('photo', photoFile);
+
+    try {
+        const [tgResp, siteResp] = await Promise.all([
+            fetch('/content-manager/publish-telegram', { method: 'POST', body: tgFd }),
+            fetch('/content-manager/add-product', { method: 'POST', body: buildSiteFormData() }),
+        ]);
+        const tgData = await tgResp.json();
+        const siteData = await siteResp.json();
+
+        if (tgData.ok && siteData.ok) {
+            showAlert(`✅ Розіслано ${tgData.sent} клієнтам і додано на сайт!`, 'success');
+        } else if (tgData.ok) {
+            showAlert(`✅ Telegram: ${tgData.sent} клієнтів. ❌ Сайт: ${siteData.error || 'помилка'}`, 'error');
+        } else if (siteData.ok) {
+            showAlert(`✅ Сайт: додано. ❌ Telegram: ${tgData.error || 'помилка'}`, 'error');
+        } else {
+            showAlert(`❌ Обидві операції не вдались`, 'error');
+        }
+    } catch (err) {
+        showAlert('Помилка публікації', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Опублікувати скрізь';
+    }
 }
 </script>
 {% endblock %}

@@ -216,3 +216,52 @@ async def publish_telegram(
         await conn.close()
 
     return JSONResponse({"ok": True, "sent": sent, "errors": errors})
+
+
+@router.post("/add-product", response_class=JSONResponse)
+async def add_product_to_site(
+    request: Request,
+    session: str = Depends(verify_session),
+    name: str = Form(...),
+    category: str = Form("liquids"),
+    price: str = Form(""),
+    site_text: str = Form(...),
+    photo: UploadFile = File(default=None),
+):
+    if not session:
+        return JSONResponse({"error": "Не авторизований"}, status_code=401)
+
+    # Upload photo to Telegram to get file_id
+    photo_id = None
+    if photo and photo.filename and BOT_TOKEN:
+        admin_tg_id = os.getenv("ADMIN_TG_ID", "")
+        if admin_tg_id:
+            photo_bytes = await photo.read()
+            form = aiohttp.FormData()
+            form.add_field("chat_id", admin_tg_id)
+            form.add_field("photo", photo_bytes, filename=photo.filename, content_type="image/jpeg")
+            async with aiohttp.ClientSession() as http:
+                async with http.post(
+                    f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto", data=form
+                ) as resp:
+                    tg_data = await resp.json()
+                    if tg_data.get("ok"):
+                        photo_id = tg_data["result"]["photo"][-1]["file_id"]
+
+    price_val = None
+    try:
+        price_val = float(price) if price.strip() else None
+    except ValueError:
+        pass
+
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        await conn.execute(
+            """INSERT INTO products (name, category, description, price, stock, photo_id, is_active)
+               VALUES ($1, $2, $3, $4, 0, $5, TRUE)""",
+            name, category, site_text, price_val, photo_id,
+        )
+    finally:
+        await conn.close()
+
+    return JSONResponse({"ok": True})
