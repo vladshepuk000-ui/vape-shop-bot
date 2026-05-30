@@ -107,6 +107,13 @@
         <h3>✈️ Telegram-пост</h3>
         <textarea class="cm-textarea" id="tgText"></textarea>
         <div class="char-count" id="tgCount">0 символів</div>
+        <div class="form-group" style="margin-top:10px;">
+            <label style="font-size:12px; color:#6b7280;">Фото товару (необов'язково)</label>
+            <input type="file" id="tgPhoto" accept="image/*" class="form-control" style="font-size:13px; padding:6px;">
+            <div id="photoPreview" style="margin-top:8px; display:none;">
+                <img id="photoImg" style="max-width:100%; max-height:160px; border-radius:8px; object-fit:cover;">
+            </div>
+        </div>
         <div class="cm-actions">
             <button class="btn btn-regen btn-sm" onclick="regenerate('telegram')">🔄 Регенерувати</button>
             <button class="btn btn-tg btn-sm" onclick="publishTelegram()">📤 Розіслати клієнтам</button>
@@ -146,6 +153,20 @@ function updateCount(textareaId, countId) {
     document.getElementById(countId).textContent = `${len} символів`;
 }
 document.getElementById('tgText').addEventListener('input', () => updateCount('tgText', 'tgCount'));
+
+document.getElementById('tgPhoto').addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('photoImg').src = e.target.result;
+            document.getElementById('photoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('photoPreview').style.display = 'none';
+    }
+});
 document.getElementById('siteText').addEventListener('input', () => updateCount('siteText', 'siteCount'));
 
 function showAlert(msg, type) {
@@ -221,12 +242,15 @@ async function publishTelegram() {
 
     const formData = new FormData();
     formData.append('text', text);
+    const photoFile = document.getElementById('tgPhoto').files[0];
+    if (photoFile) formData.append('photo', photoFile);
 
     try {
         const resp = await fetch('/content-manager/publish-telegram', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.ok) {
-            showAlert(`✅ Розсилку надіслано! ${data.sent} клієнтів отримали пост з кнопкою "Замовити".`, 'success');
+            const withPhoto = photoFile ? ' з фото' : '';
+            showAlert(`✅ Розсилку надіслано${withPhoto}! ${data.sent} клієнтів отримали пост.`, 'success');
         } else {
             showAlert(`❌ ${data.error}`, 'error');
         }

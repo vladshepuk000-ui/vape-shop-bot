@@ -1,7 +1,7 @@
 import os
 import aiohttp
 import asyncpg
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from web.auth_utils import verify_session
@@ -139,14 +139,13 @@ async def publish_telegram(
     request: Request,
     session: str = Depends(verify_session),
     text: str = Form(...),
+    photo: UploadFile = File(default=None),
 ):
     if not session:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
-
     if not BOT_TOKEN:
         return JSONResponse({"error": "BOT_TOKEN не налаштований"}, status_code=500)
 
-    # Кнопка "Замовити" — відкриває бота
     reply_markup = None
     if BOT_USERNAME:
         reply_markup = {
@@ -155,7 +154,6 @@ async def publish_telegram(
             ]]
         }
 
-    # Отримати всіх підписаних клієнтів
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         customers = await conn.fetch(
@@ -167,34 +165,52 @@ async def publish_telegram(
     if not customers:
         return JSONResponse({"error": "Немає підписаних клієнтів"}, status_code=400)
 
+    # Читаємо фото один раз якщо є
+    photo_bytes = None
+    photo_filename = "photo.jpg"
+    if photo and photo.filename:
+        photo_bytes = await photo.read()
+        photo_filename = photo.filename
+
     sent = 0
     errors = 0
     async with aiohttp.ClientSession() as http:
         for c in customers:
-            payload = {
-                "chat_id": c["telegram_id"],
-                "text": text,
-                "parse_mode": "HTML",
-            }
-            if reply_markup:
-                payload["reply_markup"] = reply_markup
+            try:
+                if photo_bytes:
+                    form = aiohttp.FormData()
+                    form.add_field("chat_id", str(c["telegram_id"]))
+                    form.add_field("caption", text)
+                    form.add_field("parse_mode", "HTML")
+                    if reply_markup:
+                        import json
+                        form.add_field("reply_markup", json.dumps(reply_markup))
+                    form.add_field("photo", photo_bytes, filename=photo_filename, content_type="image/jpeg")
+                    async with http.post(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto", data=form
+                    ) as resp:
+                        data = await resp.json()
+                else:
+                    payload = {"chat_id": c["telegram_id"], "text": text, "parse_mode": "HTML"}
+                    if reply_markup:
+                        payload["reply_markup"] = reply_markup
+                    async with http.post(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json=payload
+                    ) as resp:
+                        data = await resp.json()
 
-            async with http.post(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                json=payload,
-            ) as resp:
-                data = await resp.json()
                 if data.get("ok"):
                     sent += 1
                 else:
                     errors += 1
+            except Exception:
+                errors += 1
 
-    # Логуємо розсилку в БД
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
             "INSERT INTO broadcasts (text, sent_count, error_count) VALUES ($1, $2, $3)",
-            text, sent, errors
+            text, sent, errors,
         )
     finally:
         await conn.close()
