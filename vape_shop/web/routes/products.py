@@ -14,7 +14,8 @@ DATABASE_URL = os.getenv(
     "postgresql://postgres:jHInKjjHzgONUJeWLNNkoxIumLhqIjIs@tramway.proxy.rlwy.net:56512/railway"
 )
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-ADMIN_TG_ID = os.getenv("ADMIN_TG_ID", "")
+_admin_ids_raw = os.getenv("ADMIN_IDS", os.getenv("ADMIN_TG_ID", ""))
+ADMIN_TG_ID = _admin_ids_raw.split(",")[0].strip() if _admin_ids_raw else ""
 
 CATEGORIES = {
     "liquids":    "Рідини",
