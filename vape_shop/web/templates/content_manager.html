@@ -89,6 +89,12 @@
                 <input type="text" name="price" class="form-control" placeholder="180">
             </div>
         </div>
+        <div class="fields-row">
+            <div class="form-group">
+                <label>Кількість (шт) — для сайту і бота</label>
+                <input type="number" name="stock" class="form-control" placeholder="10" min="0" value="1">
+            </div>
+        </div>
         <div class="form-group">
             <label>Додаткові нотатки</label>
             <input type="text" name="notes" class="form-control" placeholder="смакові ноти, особливості...">
@@ -280,8 +286,10 @@ function copyText(id) {
 function buildSiteFormData() {
     const fd = new FormData();
     fd.append('name', lastFormData.get('name'));
+    fd.append('brand', lastFormData.get('brand') || '');
     fd.append('category', lastFormData.get('category'));
     fd.append('price', lastFormData.get('price') || '');
+    fd.append('stock', lastFormData.get('stock') || '1');
     fd.append('site_text', document.getElementById('siteText').value);
     const photoFile = document.getElementById('tgPhoto').files[0];
     if (photoFile) fd.append('photo', photoFile);

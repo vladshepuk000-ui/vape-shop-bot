@@ -223,8 +223,10 @@ async def add_product_to_site(
     request: Request,
     session: str = Depends(verify_session),
     name: str = Form(...),
+    brand: str = Form(""),
     category: str = Form("liquids"),
     price: str = Form(""),
+    stock: int = Form(1),
     site_text: str = Form(...),
     photo: UploadFile = File(default=None),
 ):
@@ -254,12 +256,14 @@ async def add_product_to_site(
     except ValueError:
         pass
 
+    brand_val = brand.strip() if brand.strip() else None
+
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
-            """INSERT INTO products (name, category, description, price, stock, photo_id, is_active)
-               VALUES ($1, $2, $3, $4, 0, $5, TRUE)""",
-            name, category, site_text, price_val, photo_id,
+            """INSERT INTO products (name, brand, category, description, price, stock, photo_id, is_active)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)""",
+            name, brand_val, category, site_text, price_val, stock, photo_id,
         )
     finally:
         await conn.close()
