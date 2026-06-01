@@ -55,9 +55,10 @@ async def send_broadcast(
 
     reply_markup = None
     if add_button == "1" and BOT_USERNAME:
+        username = BOT_USERNAME.lstrip("@")
         reply_markup = {
             "inline_keyboard": [[
-                {"text": "🛒 Замовити", "url": f"https://t.me/{BOT_USERNAME}"}
+                {"text": "🛒 Замовити", "url": f"https://t.me/{username}"}
             ]]
         }
 
