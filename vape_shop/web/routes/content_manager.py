@@ -147,13 +147,7 @@ async def publish_telegram(
         return JSONResponse({"error": "BOT_TOKEN не налаштований"}, status_code=500)
 
     reply_markup = None
-    if BOT_USERNAME:
-        username = BOT_USERNAME.lstrip("@")
-        reply_markup = {
-            "inline_keyboard": [[
-                {"text": "🛒 Замовити", "url": f"https://t.me/{username}"}
-            ]]
-        }
+    full_text = text + "\n\n👉 Переходь в каталог бота та обирай!"
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
@@ -181,7 +175,7 @@ async def publish_telegram(
                 if photo_bytes:
                     form = aiohttp.FormData()
                     form.add_field("chat_id", str(c["telegram_id"]))
-                    form.add_field("caption", text)
+                    form.add_field("caption", full_text)
                     form.add_field("parse_mode", "HTML")
                     if reply_markup:
                         import json
@@ -192,7 +186,7 @@ async def publish_telegram(
                     ) as resp:
                         data = await resp.json()
                 else:
-                    payload = {"chat_id": c["telegram_id"], "text": text, "parse_mode": "HTML"}
+                    payload = {"chat_id": c["telegram_id"], "text": full_text, "parse_mode": "HTML"}
                     if reply_markup:
                         payload["reply_markup"] = reply_markup
                     async with http.post(
