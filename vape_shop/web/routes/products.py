@@ -42,11 +42,14 @@ async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> str | N
                 return None
             file_id = data["result"]["photo"][-1]["file_id"]
             message_id = data["result"]["message_id"]
-            # Delete the message so admin chat stays clean
-            await http.post(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
-                json={"chat_id": ADMIN_TG_ID, "message_id": message_id},
-            )
+            try:
+                async with http.post(
+                    f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
+                    json={"chat_id": ADMIN_TG_ID, "message_id": message_id},
+                ) as _:
+                    pass
+            except Exception:
+                pass
         return file_id
     except Exception:
         return None
