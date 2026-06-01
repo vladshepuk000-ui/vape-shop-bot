@@ -42,12 +42,14 @@
             <button class="btn btn-ghost btn-sm edit-btn"
                 data-id="{{ p.id }}"
                 data-name="{{ p.name }}"
+                data-brand="{{ p.brand or '' }}"
                 data-desc="{{ p.description or '' }}"
                 data-price="{{ p.price }}"
                 data-stock="{{ p.stock }}"
                 data-oldprice="{{ p.old_price or '' }}"
                 data-isnew="{{ p.is_new or 0 }}"
-                data-ishit="{{ p.is_hit or 0 }}">✏️ Редагувати</button>
+                data-ishit="{{ p.is_hit or 0 }}"
+                data-photoid="{{ p.photo_id or '' }}">✏️ Редагувати</button>
             <button class="btn btn-ghost btn-sm restock-btn"
                 data-id="{{ p.id }}"
                 data-name="{{ p.name }}">📦 Поповнити</button>
@@ -66,20 +68,32 @@
 
 <!-- Модалка додавання -->
 <div class="modal-overlay" id="addModal">
-    <div class="modal">
+    <div class="modal" style="max-width:520px;">
         <h3>➕ Новий товар</h3>
-        <form method="post" action="/products/add">
-            <div class="form-group">
-                <label>Назва</label>
-                <input type="text" name="name" class="form-control" required>
+        <form method="post" action="/products/add" enctype="multipart/form-data">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Назва *</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Бренд</label>
+                    <input type="text" name="brand" class="form-control" placeholder="FL_350">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Категорія</label>
-                <select name="category" class="form-control">
-                    <option value="liquids">Рідини</option>
-                    <option value="cartridges">Картриджі</option>
-                    <option value="systems">Системи (поди)</option>
-                </select>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Категорія</label>
+                    <select name="category" class="form-control">
+                        <option value="liquids">Рідини</option>
+                        <option value="cartridges">Картриджі</option>
+                        <option value="systems">Системи (поди)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Залишок (шт) *</label>
+                    <input type="number" name="stock" class="form-control" value="1" required>
+                </div>
             </div>
             <div class="form-group">
                 <label>Опис</label>
@@ -87,17 +101,20 @@
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
-                    <label>Ціна (грн)</label>
+                    <label>Ціна (грн) *</label>
                     <input type="number" name="price" class="form-control" step="0.01" required>
                 </div>
                 <div class="form-group">
                     <label>Стара ціна (необов'язково)</label>
-                    <input type="number" name="old_price" class="form-control" step="0.01" placeholder="наприклад 270">
+                    <input type="number" name="old_price" class="form-control" step="0.01" placeholder="270">
                 </div>
             </div>
             <div class="form-group">
-                <label>Залишок (шт)</label>
-                <input type="number" name="stock" class="form-control" value="0" required>
+                <label>Фото товару</label>
+                <input type="file" name="photo" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="previewPhoto(this,'addPreview')">
+                <div id="addPreview" style="margin-top:8px; display:none;">
+                    <img style="max-width:100%; max-height:140px; border-radius:8px; object-fit:cover;">
+                </div>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('addModal')">Скасувати</button>
@@ -109,12 +126,18 @@
 
 <!-- Модалка редагування -->
 <div class="modal-overlay" id="editModal">
-    <div class="modal">
+    <div class="modal" style="max-width:520px;">
         <h3>✏️ Редагувати товар</h3>
-        <form method="post" id="editForm">
-            <div class="form-group">
-                <label>Назва</label>
-                <input type="text" name="name" id="editName" class="form-control" required>
+        <form method="post" id="editForm" enctype="multipart/form-data">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Назва</label>
+                    <input type="text" name="name" id="editName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Бренд</label>
+                    <input type="text" name="brand" id="editBrand" class="form-control" placeholder="FL_350">
+                </div>
             </div>
             <div class="form-group">
                 <label>Опис</label>
@@ -127,7 +150,7 @@
                 </div>
                 <div class="form-group">
                     <label>Стара ціна (грн, необов'язково)</label>
-                    <input type="number" name="old_price" id="editOldPrice" class="form-control" step="0.01" placeholder="наприклад 270">
+                    <input type="number" name="old_price" id="editOldPrice" class="form-control" step="0.01" placeholder="270">
                 </div>
             </div>
             <div class="form-group">
@@ -143,6 +166,17 @@
                     <input type="checkbox" name="is_hit" id="editIsHit" style="width:16px; height:16px; accent-color:#a78bfa;">
                     🔥 Хіт продажів
                 </label>
+            </div>
+            <div class="form-group">
+                <label>Нове фото (залишити порожнім щоб не змінювати)</label>
+                <div id="editCurrentPhoto" style="margin-bottom:8px; display:none;">
+                    <img id="editCurrentPhotoImg" style="max-width:100%; max-height:120px; border-radius:8px; object-fit:cover;">
+                    <div style="font-size:12px; color:#9ca3af; margin-top:4px;">Поточне фото</div>
+                </div>
+                <input type="file" name="photo" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="previewPhoto(this,'editPreview')">
+                <div id="editPreview" style="margin-top:8px; display:none;">
+                    <img style="max-width:100%; max-height:120px; border-radius:8px; object-fit:cover;">
+                </div>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Скасувати</button>
@@ -173,9 +207,25 @@
 
 {% block scripts %}
 <script>
+function previewPhoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.querySelector('img').src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
 document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.getElementById('editName').value = this.dataset.name;
+        document.getElementById('editBrand').value = this.dataset.brand;
         document.getElementById('editDesc').value = this.dataset.desc;
         document.getElementById('editPrice').value = this.dataset.price;
         document.getElementById('editOldPrice').value = this.dataset.oldprice;
@@ -183,6 +233,18 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
         document.getElementById('editIsNew').checked = this.dataset.isnew === '1';
         document.getElementById('editIsHit').checked = this.dataset.ishit === '1';
         document.getElementById('editForm').action = '/products/' + this.dataset.id + '/edit';
+
+        // Показати поточне фото якщо є
+        const currentPhoto = document.getElementById('editCurrentPhoto');
+        if (this.dataset.photoid) {
+            document.getElementById('editCurrentPhotoImg').src = '/api/photo/' + this.dataset.photoid;
+            currentPhoto.style.display = 'block';
+        } else {
+            currentPhoto.style.display = 'none';
+        }
+        // Скинути preview нового фото
+        document.getElementById('editPreview').style.display = 'none';
+
         document.getElementById('editModal').classList.add('open');
     });
 });
