@@ -70,7 +70,7 @@
 <div class="modal-overlay" id="addModal">
     <div class="modal" style="max-width:520px;">
         <h3>➕ Новий товар</h3>
-        <form method="post" action="/products/add" enctype="multipart/form-data">
+        <form method="post" action="/products/add">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label>Назва *</label>
@@ -109,9 +109,11 @@
                     <input type="number" name="old_price" class="form-control" step="0.01" placeholder="270">
                 </div>
             </div>
+            <input type="hidden" name="photo_id" id="addPhotoId">
             <div class="form-group">
                 <label>Фото товару</label>
-                <input type="file" name="photo" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="previewPhoto(this,'addPreview')">
+                <input type="file" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="uploadPhoto(this,'addPhotoId','addPhotoStatus','addPreview')">
+                <div id="addPhotoStatus" style="font-size:12px; margin-top:4px;"></div>
                 <div id="addPreview" style="margin-top:8px; display:none;">
                     <img style="max-width:100%; max-height:140px; border-radius:8px; object-fit:cover;">
                 </div>
@@ -128,7 +130,7 @@
 <div class="modal-overlay" id="editModal">
     <div class="modal" style="max-width:520px;">
         <h3>✏️ Редагувати товар</h3>
-        <form method="post" id="editForm" enctype="multipart/form-data">
+        <form method="post" id="editForm">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label>Назва</label>
@@ -167,13 +169,15 @@
                     🔥 Хіт продажів
                 </label>
             </div>
+            <input type="hidden" name="photo_id" id="editPhotoId">
             <div class="form-group">
-                <label>Нове фото (залишити порожнім щоб не змінювати)</label>
+                <label>Фото (залишити порожнім щоб не змінювати)</label>
                 <div id="editCurrentPhoto" style="margin-bottom:8px; display:none;">
                     <img id="editCurrentPhotoImg" style="max-width:100%; max-height:120px; border-radius:8px; object-fit:cover;">
                     <div style="font-size:12px; color:#9ca3af; margin-top:4px;">Поточне фото</div>
                 </div>
-                <input type="file" name="photo" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="previewPhoto(this,'editPreview')">
+                <input type="file" accept="image/*" class="form-control" style="font-size:13px; padding:6px;" onchange="uploadPhoto(this,'editPhotoId','editPhotoStatus','editPreview')">
+                <div id="editPhotoStatus" style="font-size:12px; margin-top:4px;"></div>
                 <div id="editPreview" style="margin-top:8px; display:none;">
                     <img style="max-width:100%; max-height:120px; border-radius:8px; object-fit:cover;">
                 </div>
@@ -207,18 +211,43 @@
 
 {% block scripts %}
 <script>
-function previewPhoto(input, previewId) {
-    const preview = document.getElementById(previewId);
+async function uploadPhoto(input, photoIdField, statusId, previewId) {
     const file = input.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            preview.querySelector('img').src = e.target.result;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    } else {
-        preview.style.display = 'none';
+    if (!file) return;
+
+    const status = document.getElementById(statusId);
+    const preview = document.getElementById(previewId);
+
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onload = e => {
+        preview.querySelector('img').src = e.target.result;
+        preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    status.style.color = '#6b7280';
+    status.textContent = '⏳ Завантажую фото...';
+
+    const fd = new FormData();
+    fd.append('photo', file);
+
+    try {
+        const resp = await fetch('/products/upload-photo', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (data.file_id) {
+            document.getElementById(photoIdField).value = data.file_id;
+            status.style.color = '#059669';
+            status.textContent = '✅ Фото завантажено';
+        } else {
+            status.style.color = '#dc2626';
+            status.textContent = '❌ ' + (data.error || 'Помилка завантаження');
+            document.getElementById(photoIdField).value = '';
+        }
+    } catch (e) {
+        status.style.color = '#dc2626';
+        status.textContent = '❌ Помилка з\'єднання';
+        document.getElementById(photoIdField).value = '';
     }
 }
 

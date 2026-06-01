@@ -3,7 +3,7 @@ import json
 import aiohttp
 import asyncpg
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from web.auth_utils import verify_session
 
@@ -25,10 +25,12 @@ CATEGORIES = {
 router = APIRouter(prefix="/products")
 
 
-async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> str | None:
-    """Upload photo to admin chat, get file_id, delete message to keep chat clean."""
-    if not BOT_TOKEN or not ADMIN_TG_ID:
-        return None
+async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> tuple[str | None, str | None]:
+    """Upload photo to admin chat, get file_id. Returns (file_id, error)."""
+    if not BOT_TOKEN:
+        return None, "BOT_TOKEN не налаштований"
+    if not ADMIN_TG_ID:
+        return None, "ADMIN_TG_ID не налаштований"
     try:
         form = aiohttp.FormData()
         form.add_field("chat_id", ADMIN_TG_ID)
@@ -39,7 +41,7 @@ async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> str | N
             ) as resp:
                 data = await resp.json()
             if not data.get("ok"):
-                return None
+                return None, data.get("description", "Telegram error")
             file_id = data["result"]["photo"][-1]["file_id"]
             message_id = data["result"]["message_id"]
             try:
@@ -50,9 +52,9 @@ async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> str | N
                     pass
             except Exception:
                 pass
-        return file_id
-    except Exception:
-        return None
+        return file_id, None
+    except Exception as e:
+        return None, str(e)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -74,6 +76,20 @@ async def products_list(request: Request, session: str = Depends(verify_session)
     })
 
 
+@router.post("/upload-photo", response_class=JSONResponse)
+async def upload_photo(
+    photo: UploadFile = File(...),
+    session: str = Depends(verify_session),
+):
+    if not session:
+        return JSONResponse({"error": "Не авторизований"}, status_code=401)
+    photo_bytes = await photo.read()
+    file_id, error = await upload_photo_to_telegram(photo_bytes, photo.filename)
+    if error:
+        return JSONResponse({"error": error})
+    return JSONResponse({"file_id": file_id})
+
+
 @router.post("/add")
 async def add_product(
     name: str = Form(...),
@@ -83,7 +99,7 @@ async def add_product(
     price: float = Form(...),
     old_price: str = Form(""),
     stock: int = Form(...),
-    photo: UploadFile = File(default=None),
+    photo_id: str = Form(""),
     session: str = Depends(verify_session),
 ):
     if not session:
@@ -95,18 +111,14 @@ async def add_product(
         old_price_val = None
 
     brand_val = brand.strip() if brand.strip() else None
-
-    photo_id = None
-    if photo and photo.filename:
-        photo_bytes = await photo.read()
-        photo_id = await upload_photo_to_telegram(photo_bytes, photo.filename)
+    photo_id_val = photo_id.strip() if photo_id.strip() else None
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
             """INSERT INTO products (name, brand, description, category, price, old_price, stock, photo_id, is_active)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)""",
-            name, brand_val, description, category, price, old_price_val, stock, photo_id
+            name, brand_val, description, category, price, old_price_val, stock, photo_id_val
         )
     finally:
         await conn.close()
@@ -125,7 +137,7 @@ async def edit_product(
     old_price: str = Form(""),
     is_new: str = Form(""),
     is_hit: str = Form(""),
-    photo: UploadFile = File(default=None),
+    photo_id: str = Form(""),
     session: str = Depends(verify_session),
 ):
     if not session:
@@ -137,20 +149,16 @@ async def edit_product(
         old_price_val = None
 
     brand_val = brand.strip() if brand.strip() else None
-
-    photo_id = None
-    if photo and photo.filename:
-        photo_bytes = await photo.read()
-        photo_id = await upload_photo_to_telegram(photo_bytes, photo.filename)
+    photo_id_val = photo_id.strip() if photo_id.strip() else None
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        if photo_id:
+        if photo_id_val:
             await conn.execute(
                 """UPDATE products SET name=$1, brand=$2, description=$3, price=$4, stock=$5,
                    old_price=$6, is_new=$7, is_hit=$8, photo_id=$9 WHERE id=$10""",
                 name, brand_val, description, price, stock, old_price_val,
-                1 if is_new else 0, 1 if is_hit else 0, photo_id, product_id
+                1 if is_new else 0, 1 if is_hit else 0, photo_id_val, product_id
             )
         else:
             await conn.execute(
