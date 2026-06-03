@@ -200,7 +200,31 @@ async def restock_product(product_id: int, quantity: int = Form(...), session: s
         await conn.execute(
             "UPDATE products SET stock = stock + $1 WHERE id = $2", quantity, product_id
         )
+        product = await conn.fetchrow("SELECT name FROM products WHERE id = $1", product_id)
+        waitlist = await conn.fetch("""
+            SELECT c.telegram_id FROM waitlist w
+            JOIN customers c ON w.customer_id = c.id
+            WHERE w.product_id = $1
+        """, product_id)
+        if waitlist:
+            await conn.execute("DELETE FROM waitlist WHERE product_id = $1", product_id)
     finally:
         await conn.close()
+
+    if waitlist and BOT_TOKEN and product:
+        async with aiohttp.ClientSession() as http:
+            for row in waitlist:
+                try:
+                    async with http.post(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                        json={
+                            "chat_id": row["telegram_id"],
+                            "text": f"🔔 Товар <b>{product['name']}</b> знову є в наявності!\nПоспішай замовити 👉 /start",
+                            "parse_mode": "HTML",
+                        }
+                    ) as _:
+                        pass
+                except Exception:
+                    pass
 
     return RedirectResponse(url="/products", status_code=302)
