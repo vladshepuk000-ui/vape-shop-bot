@@ -12,6 +12,8 @@ templates = Jinja2Templates(directory=BASE_DIR)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "")
+_admin_ids_raw = os.getenv("ADMIN_IDS", os.getenv("ADMIN_TG_ID", ""))
+ADMIN_TG_ID = _admin_ids_raw.split(",")[0].strip() if _admin_ids_raw else ""
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://postgres:jHInKjjHzgONUJeWLNNkoxIumLhqIjIs@tramway.proxy.rlwy.net:56512/railway"
@@ -231,7 +233,7 @@ async def add_product_to_site(
     # Upload photo to Telegram to get file_id
     photo_id = None
     if photo and photo.filename and BOT_TOKEN:
-        admin_tg_id = os.getenv("ADMIN_TG_ID", "")
+        admin_tg_id = ADMIN_TG_ID
         if admin_tg_id:
             photo_bytes = await photo.read()
             form = aiohttp.FormData()

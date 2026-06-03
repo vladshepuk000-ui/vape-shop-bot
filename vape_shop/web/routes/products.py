@@ -1,5 +1,4 @@
 import os
-import json
 import aiohttp
 import asyncpg
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
@@ -195,6 +194,8 @@ async def restock_product(product_id: int, quantity: int = Form(...), session: s
     if not session:
         return RedirectResponse(url="/login")
 
+    product = None
+    waitlist = []
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
