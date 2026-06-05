@@ -43,7 +43,7 @@ async def landing(request: Request):
         products = await conn.fetch("""
             SELECT id, name, category, description, price, old_price, stock, photo_id, is_new, is_hit
             FROM products WHERE is_active = TRUE
-            ORDER BY category, name
+            ORDER BY category, (stock > 0) DESC, name
         """)
 
         customers_count = await conn.fetchval("SELECT COUNT(*) FROM customers")
