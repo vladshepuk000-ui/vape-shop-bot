@@ -190,7 +190,8 @@ async def cancel_order(order_id: str):
 
 @router.get("/api/online-count")
 async def online_count(request: Request):
-    ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
     now = datetime.now()
     online_sessions[ip] = now
     cutoff = now - timedelta(minutes=5)
