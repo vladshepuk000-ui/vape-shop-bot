@@ -170,7 +170,7 @@ async def edit_product(
     finally:
         await conn.close()
 
-    return RedirectResponse(url=f"/products#product-{product_id}", status_code=302)
+    return RedirectResponse(url=f"/products?scrollTo={product_id}", status_code=302)
 
 
 @router.post("/{product_id}/toggle")
@@ -228,4 +228,4 @@ async def restock_product(product_id: int, quantity: int = Form(...), session: s
                 except Exception:
                     pass
 
-    return RedirectResponse(url=f"/products#product-{product_id}", status_code=302)
+    return RedirectResponse(url=f"/products?scrollTo={product_id}", status_code=302)

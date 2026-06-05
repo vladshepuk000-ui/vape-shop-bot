@@ -286,6 +286,13 @@ document.querySelectorAll('.restock-btn').forEach(btn => {
     });
 });
 
+const scrollTo = new URLSearchParams(location.search).get('scrollTo');
+if (scrollTo) {
+    const el = document.getElementById('product-' + scrollTo);
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    history.replaceState(null, '', '/products');
+}
+
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
 }
