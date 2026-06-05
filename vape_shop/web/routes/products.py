@@ -170,7 +170,7 @@ async def edit_product(
     finally:
         await conn.close()
 
-    return RedirectResponse(url="/products", status_code=302)
+    return JSONResponse({"ok": True, "name": name, "price": price, "stock": stock})
 
 
 @router.post("/{product_id}/toggle")
@@ -228,4 +228,4 @@ async def restock_product(product_id: int, quantity: int = Form(...), session: s
                 except Exception:
                     pass
 
-    return RedirectResponse(url="/products", status_code=302)
+    return JSONResponse({"ok": True, "notified": len(waitlist)})
