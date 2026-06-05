@@ -291,7 +291,7 @@ async def show_product(callback):
         )
     finally:
         await conn.close()
-    photos = [r["photo_id"] for r in rows]
+    photos = [r["photo_id"] for r in rows if r["photo_id"]]
 
     if not photos and product['photo_id']:
         photos = [product['photo_id']]
