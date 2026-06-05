@@ -261,7 +261,6 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
         document.getElementById('editStock').value = this.dataset.stock;
         document.getElementById('editIsNew').checked = this.dataset.isnew === '1';
         document.getElementById('editIsHit').checked = this.dataset.ishit === '1';
-        currentEditId = this.dataset.id;
         document.getElementById('editForm').action = '/products/' + this.dataset.id + '/edit';
 
         // Показати поточне фото якщо є
@@ -279,13 +278,10 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
     });
 });
 
-let currentEditId = null;
-let currentRestockId = null;
-
 document.querySelectorAll('.restock-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        currentRestockId = this.dataset.id;
         document.getElementById('restockName').textContent = this.dataset.name;
+        document.getElementById('restockForm').action = '/products/' + this.dataset.id + '/restock';
         document.getElementById('restockModal').classList.add('open');
     });
 });
@@ -297,85 +293,6 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', function(e) {
         if (e.target === el) closeModal(el.id);
     });
-});
-
-// Edit через AJAX — без перезавантаження
-document.getElementById('editForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const fd = new FormData(this);
-    const saveBtn = this.querySelector('[type=submit]');
-    saveBtn.disabled = true;
-    saveBtn.textContent = '⏳';
-
-    try {
-        const resp = await fetch('/products/' + currentEditId + '/edit', { method: 'POST', body: fd });
-        const data = await resp.json();
-        if (data.ok) {
-            // Оновити дані в картці без перезавантаження
-            const card = document.getElementById('product-' + currentEditId);
-            if (card) {
-                card.querySelector('.product-item-name').textContent = data.name;
-                card.querySelector('.product-item-price').textContent = Math.round(data.price) + ' грн';
-                const stockEl = card.querySelectorAll('.product-item-meta span')[2];
-                if (stockEl) {
-                    stockEl.textContent = data.stock + ' шт';
-                    stockEl.style.color = data.stock == 0 ? '#ef4444' : '';
-                    stockEl.style.fontWeight = data.stock == 0 ? '600' : '';
-                }
-                // Оновити data-атрибути кнопки редагування
-                const editBtn = card.querySelector('.edit-btn');
-                if (editBtn) {
-                    editBtn.dataset.name = data.name;
-                    editBtn.dataset.price = data.price;
-                    editBtn.dataset.stock = data.stock;
-                }
-            }
-            closeModal('editModal');
-        }
-    } catch (e) {
-        alert('Помилка збереження');
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Зберегти';
-    }
-});
-
-// Restock через AJAX — без перезавантаження
-document.getElementById('restockForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const fd = new FormData(this);
-    const saveBtn = this.querySelector('[type=submit]');
-    saveBtn.disabled = true;
-    saveBtn.textContent = '⏳';
-
-    try {
-        const resp = await fetch('/products/' + currentRestockId + '/restock', { method: 'POST', body: fd });
-        const data = await resp.json();
-        if (data.ok) {
-            // Оновити залишок в картці
-            const card = document.getElementById('product-' + currentRestockId);
-            if (card) {
-                const qty = parseInt(fd.get('quantity'));
-                const stockEl = card.querySelectorAll('.product-item-meta span')[2];
-                if (stockEl) {
-                    const current = parseInt(stockEl.textContent) || 0;
-                    const newStock = current + qty;
-                    stockEl.textContent = newStock + ' шт';
-                    stockEl.style.color = '';
-                    stockEl.style.fontWeight = '';
-                    // Оновити data-stock
-                    const editBtn = card.querySelector('.edit-btn');
-                    if (editBtn) editBtn.dataset.stock = newStock;
-                }
-            }
-            closeModal('restockModal');
-        }
-    } catch (e) {
-        alert('Помилка поповнення');
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Поповнити';
-    }
 });
 </script>
 {% endblock %}
