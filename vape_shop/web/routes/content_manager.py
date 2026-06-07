@@ -151,10 +151,11 @@ async def remove_background(
         return JSONResponse({"error": "REMOVE_BG_API_KEY не налаштований"}, status_code=500)
 
     photo_bytes = await photo.read()
+    filename = photo.filename or "photo.jpg"
 
     async with aiohttp.ClientSession() as http:
         form = aiohttp.FormData()
-        form.add_field("image_file", photo_bytes, filename=photo.filename, content_type="image/jpeg")
+        form.add_field("image_file", photo_bytes, filename=filename, content_type="image/jpeg")
         form.add_field("size", "auto")
         async with http.post(
             "https://api.remove.bg/v1.0/removebg",
@@ -162,21 +163,25 @@ async def remove_background(
             headers={"X-Api-Key": REMOVE_BG_API_KEY},
         ) as resp:
             if resp.status != 200:
-                err = await resp.json()
-                msg = err.get("errors", [{}])[0].get("title", "Помилка remove.bg")
+                try:
+                    err = await resp.json()
+                    msg = err.get("errors", [{}])[0].get("title", "Помилка remove.bg")
+                except Exception:
+                    msg = f"remove.bg HTTP {resp.status}"
                 return JSONResponse({"error": msg}, status_code=400)
             result_bytes = await resp.read()
 
-    # Накласти білий фон через Pillow
-    img = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
-    background = Image.new("RGBA", img.size, (255, 255, 255, 255))
-    background.paste(img, mask=img.split()[3])
-    final = background.convert("RGB")
-    output = io.BytesIO()
-    final.save(output, format="JPEG", quality=95)
-    output.seek(0)
-
-    return Response(content=output.read(), media_type="image/jpeg")
+    try:
+        img = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
+        background = Image.new("RGBA", img.size, (255, 255, 255, 255))
+        background.paste(img, mask=img.split()[3])
+        final = background.convert("RGB")
+        output = io.BytesIO()
+        final.save(output, format="JPEG", quality=95)
+        output.seek(0)
+        return Response(content=output.read(), media_type="image/jpeg")
+    except Exception as e:
+        return JSONResponse({"error": f"Помилка обробки зображення: {e}"}, status_code=500)
 
 
 @router.post("/publish-telegram", response_class=JSONResponse)

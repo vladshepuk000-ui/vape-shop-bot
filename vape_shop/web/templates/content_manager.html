@@ -377,7 +377,9 @@ async function publishAll() {
 
     const tgFd = new FormData();
     tgFd.append('text', text);
-    const photoFile = document.getElementById('tgPhoto').files[0];
+    const photoFile = processedPhotoBlob
+        ? new File([processedPhotoBlob], 'photo.jpg', { type: 'image/jpeg' })
+        : document.getElementById('tgPhoto').files[0];
     if (photoFile) tgFd.append('photo', photoFile);
 
     try {
