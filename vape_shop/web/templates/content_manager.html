@@ -118,6 +118,12 @@
             <input type="file" id="tgPhoto" accept="image/*" class="form-control" style="font-size:13px; padding:6px;">
             <div id="photoPreview" style="margin-top:8px; display:none;">
                 <img id="photoImg" style="max-width:100%; max-height:160px; border-radius:8px; object-fit:cover;">
+                <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+                    <button type="button" class="btn btn-sm" id="removeBgBtn"
+                        style="background:#f3f4f6; border:1px solid #e5e7eb; color:#374151;"
+                        onclick="removeBg()">🪄 Прибрати фон</button>
+                    <span id="removeBgStatus" style="font-size:12px; color:#6b7280;"></span>
+                </div>
             </div>
         </div>
         <div class="cm-actions">
@@ -171,6 +177,8 @@ document.getElementById('tgText').addEventListener('input', () => updateCount('t
 
 document.getElementById('tgPhoto').addEventListener('change', function() {
     const file = this.files[0];
+    processedPhotoBlob = null;
+    document.getElementById('removeBgStatus').textContent = '';
     if (file) {
         const reader = new FileReader();
         reader.onload = e => {
@@ -182,6 +190,42 @@ document.getElementById('tgPhoto').addEventListener('change', function() {
         document.getElementById('photoPreview').style.display = 'none';
     }
 });
+
+async function removeBg() {
+    const file = document.getElementById('tgPhoto').files[0];
+    if (!file) return;
+
+    const btn = document.getElementById('removeBgBtn');
+    const status = document.getElementById('removeBgStatus');
+    btn.disabled = true;
+    btn.textContent = '⏳ Обробляю...';
+    status.textContent = '';
+
+    const fd = new FormData();
+    fd.append('photo', file);
+
+    try {
+        const resp = await fetch('/content-manager/remove-bg', { method: 'POST', body: fd });
+        if (!resp.ok) {
+            const err = await resp.json();
+            status.style.color = '#dc2626';
+            status.textContent = '❌ ' + (err.error || 'Помилка');
+            return;
+        }
+        const blob = await resp.blob();
+        processedPhotoBlob = blob;
+        document.getElementById('photoImg').src = URL.createObjectURL(blob);
+        status.style.color = '#059669';
+        status.textContent = '✅ Фон прибрано';
+        btn.textContent = '🔄 Прибрати знову';
+    } catch (e) {
+        status.style.color = '#dc2626';
+        status.textContent = '❌ Помилка з\'єднання';
+    } finally {
+        btn.disabled = false;
+        if (!processedPhotoBlob) btn.textContent = '🪄 Прибрати фон';
+    }
+}
 document.getElementById('siteText').addEventListener('input', () => updateCount('siteText', 'siteCount'));
 
 function showAlert(msg, type) {
@@ -198,6 +242,7 @@ function setLoading(on) {
 }
 
 let lastFormData = null;
+let processedPhotoBlob = null;
 
 document.getElementById('productForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -258,7 +303,9 @@ async function publishTelegram() {
 
     const formData = new FormData();
     formData.append('text', text);
-    const photoFile = document.getElementById('tgPhoto').files[0];
+    const photoFile = processedPhotoBlob
+        ? new File([processedPhotoBlob], 'photo.jpg', { type: 'image/jpeg' })
+        : document.getElementById('tgPhoto').files[0];
     if (photoFile) formData.append('photo', photoFile);
 
     try {
@@ -291,7 +338,9 @@ function buildSiteFormData() {
     fd.append('price', lastFormData.get('price') || '');
     fd.append('stock', lastFormData.get('stock') || '1');
     fd.append('site_text', document.getElementById('siteText').value);
-    const photoFile = document.getElementById('tgPhoto').files[0];
+    const photoFile = processedPhotoBlob
+        ? new File([processedPhotoBlob], 'photo.jpg', { type: 'image/jpeg' })
+        : document.getElementById('tgPhoto').files[0];
     if (photoFile) fd.append('photo', photoFile);
     return fd;
 }

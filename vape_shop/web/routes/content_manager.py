@@ -1,8 +1,10 @@
 import os
+import io
 import aiohttp
 import asyncpg
+from PIL import Image
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from web.auth_utils import verify_session
 
@@ -10,6 +12,7 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=BASE_DIR)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "")
 _admin_ids_raw = os.getenv("ADMIN_IDS", os.getenv("ADMIN_TG_ID", ""))
@@ -134,6 +137,46 @@ async def generate_content(
         site_text = f"⚠️ Помилка генерації: {e}"
 
     return JSONResponse({"telegram": tg_text, "site": site_text})
+
+
+@router.post("/remove-bg")
+async def remove_background(
+    request: Request,
+    session: str = Depends(verify_session),
+    photo: UploadFile = File(...),
+):
+    if not session:
+        return JSONResponse({"error": "Не авторизований"}, status_code=401)
+    if not REMOVE_BG_API_KEY:
+        return JSONResponse({"error": "REMOVE_BG_API_KEY не налаштований"}, status_code=500)
+
+    photo_bytes = await photo.read()
+
+    async with aiohttp.ClientSession() as http:
+        form = aiohttp.FormData()
+        form.add_field("image_file", photo_bytes, filename=photo.filename, content_type="image/jpeg")
+        form.add_field("size", "auto")
+        async with http.post(
+            "https://api.remove.bg/v1.0/removebg",
+            data=form,
+            headers={"X-Api-Key": REMOVE_BG_API_KEY},
+        ) as resp:
+            if resp.status != 200:
+                err = await resp.json()
+                msg = err.get("errors", [{}])[0].get("title", "Помилка remove.bg")
+                return JSONResponse({"error": msg}, status_code=400)
+            result_bytes = await resp.read()
+
+    # Накласти білий фон через Pillow
+    img = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
+    background = Image.new("RGBA", img.size, (255, 255, 255, 255))
+    background.paste(img, mask=img.split()[3])
+    final = background.convert("RGB")
+    output = io.BytesIO()
+    final.save(output, format="JPEG", quality=95)
+    output.seek(0)
+
+    return Response(content=output.read(), media_type="image/jpeg")
 
 
 @router.post("/publish-telegram", response_class=JSONResponse)
