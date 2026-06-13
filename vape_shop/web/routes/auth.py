@@ -120,6 +120,12 @@ async def verify_code(request: Request, email: str = Form(...), code: str = Form
 
         await conn.execute("UPDATE otp_codes SET used = TRUE WHERE id = $1", row["id"])
         owner = await conn.fetchrow("SELECT id FROM shop_owners WHERE email = $1", email)
+        if not owner:
+            return templates.TemplateResponse(request, "login.html", {
+                "step": "email",
+                "error": "Помилка входу. Спробуй ще раз.",
+                "email": "",
+            })
 
         token = secrets.token_hex(32)
         expires = datetime.utcnow() + timedelta(days=7)
