@@ -1,0 +1,70 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: 🌿 Vape Admin
+    - navigation [ref=e4]:
+      - link "📊 Дашборд" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "📦 Замовлення" [ref=e6] [cursor=pointer]:
+        - /url: /orders
+      - link "🛍 Товари" [ref=e7] [cursor=pointer]:
+        - /url: /products
+      - link "👥 Клієнти" [ref=e8] [cursor=pointer]:
+        - /url: /customers
+      - link "📢 Розсилки" [ref=e9] [cursor=pointer]:
+        - /url: /broadcasts
+      - link "🤖 ІІ Контент" [ref=e10] [cursor=pointer]:
+        - /url: /content-manager
+    - link "🚪 Вийти" [ref=e12] [cursor=pointer]:
+      - /url: /logout
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - heading "📢 Розсилки" [level=1] [ref=e16]
+      - generic [ref=e17]: Vape Shop
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "📤 Нова розсилка" [level=3] [ref=e20]
+        - generic [ref=e21]:
+          - text: "Підписників:"
+          - strong [ref=e22]: "71"
+        - generic [ref=e23]:
+          - generic [ref=e24]: Текст повідомлення
+          - textbox "Введи текст розсилки..." [ref=e25]
+          - generic [ref=e26]: 0 символів
+        - generic [ref=e28] [cursor=pointer]:
+          - checkbox "Додати кнопку \"🛒 Замовити\" (для товарних постів)" [ref=e29]
+          - text: Додати кнопку "🛒 Замовити" (для товарних постів)
+        - button "📤 Розіслати всім клієнтам" [ref=e30] [cursor=pointer]
+      - generic [ref=e31]:
+        - heading "Історія розсилок" [level=2] [ref=e33]
+        - table [ref=e34]:
+          - rowgroup [ref=e35]:
+            - row "# Текст Надіслано Помилок Дата" [ref=e36]:
+              - columnheader "#" [ref=e37]
+              - columnheader "Текст" [ref=e38]
+              - columnheader "Надіслано" [ref=e39]
+              - columnheader "Помилок" [ref=e40]
+              - columnheader "Дата" [ref=e41]
+          - rowgroup [ref=e42]:
+            - row "3 новая партия будет в течении 2-х дней! 60 11 2026-05-29 21:43" [ref=e43]:
+              - cell "3" [ref=e44]
+              - cell "новая партия будет в течении 2-х дней!" [ref=e45]
+              - cell "60" [ref=e46]:
+                - generic [ref=e47]: "60"
+              - cell "11" [ref=e48]:
+                - generic [ref=e49]: "11"
+              - cell "2026-05-29 21:43" [ref=e50]
+            - 'row "2 👋 Давно не замовляв? Можливо вже з''явилось щось нове! Заглядай до нас 👉 /start Завжди на зв''язку: @Vlad_shepuk 57 10 2026-05-25 09:00" [ref=e51]':
+              - cell "2" [ref=e52]
+              - 'cell "👋 Давно не замовляв? Можливо вже з''явилось щось нове! Заглядай до нас 👉 /start Завжди на зв''язку: @Vlad_shepuk" [ref=e53]'
+              - cell "57" [ref=e54]:
+                - generic [ref=e55]: "57"
+              - cell "10" [ref=e56]:
+                - generic [ref=e57]: "10"
+              - cell "2026-05-25 09:00" [ref=e58]
+            - row "1 🔥 Привіт! Нагадуємо — ми працюємо 😊 В наявності свіжі рідини та картриджі. Заходь подивитись що є 👉 /start Питання — @… 62 — 2026-05-18 15:17" [ref=e59]:
+              - cell "1" [ref=e60]
+              - cell "🔥 Привіт! Нагадуємо — ми працюємо 😊 В наявності свіжі рідини та картриджі. Заходь подивитись що є 👉 /start Питання — @…" [ref=e61]
+              - cell "62" [ref=e62]:
+                - generic [ref=e63]: "62"
+              - cell "—" [ref=e64]
+              - cell "2026-05-18 15:17" [ref=e65]

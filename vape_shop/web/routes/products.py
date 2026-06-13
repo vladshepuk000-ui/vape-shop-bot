@@ -4,7 +4,7 @@ import asyncpg
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from web.auth_utils import verify_session
+from web.auth_utils import get_current_shop_id
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=BASE_DIR)
@@ -26,7 +26,6 @@ router = APIRouter(prefix="/products")
 
 
 async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> tuple[str | None, str | None]:
-    """Upload photo to admin chat, get file_id. Returns (file_id, error)."""
     if not BOT_TOKEN:
         return None, "BOT_TOKEN не налаштований"
     if not ADMIN_TG_ID:
@@ -58,14 +57,15 @@ async def upload_photo_to_telegram(photo_bytes: bytes, filename: str) -> tuple[s
 
 
 @router.get("", response_class=HTMLResponse)
-async def products_list(request: Request, session: str = Depends(verify_session)):
-    if not session:
+async def products_list(request: Request, shop_id: int = Depends(get_current_shop_id)):
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         products = await conn.fetch(
-            "SELECT * FROM products ORDER BY is_active DESC, category, name"
+            "SELECT * FROM products WHERE shop_id = $1 ORDER BY is_active DESC, category, name",
+            shop_id
         )
     finally:
         await conn.close()
@@ -79,9 +79,9 @@ async def products_list(request: Request, session: str = Depends(verify_session)
 @router.post("/upload-photo", response_class=JSONResponse)
 async def upload_photo(
     photo: UploadFile = File(...),
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
 ):
-    if not session:
+    if not shop_id:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
     photo_bytes = await photo.read()
     file_id, error = await upload_photo_to_telegram(photo_bytes, photo.filename)
@@ -100,9 +100,9 @@ async def add_product(
     old_price: str = Form(""),
     stock: int = Form(...),
     photo_id: str = Form(""),
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
 ):
-    if not session:
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     try:
@@ -116,9 +116,9 @@ async def add_product(
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
-            """INSERT INTO products (name, brand, description, category, price, old_price, stock, photo_id, is_active)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)""",
-            name, brand_val, description, category, price, old_price_val, stock, photo_id_val
+            """INSERT INTO products (name, brand, description, category, price, old_price, stock, photo_id, is_active, shop_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9)""",
+            name, brand_val, description, category, price, old_price_val, stock, photo_id_val, shop_id
         )
     finally:
         await conn.close()
@@ -138,9 +138,9 @@ async def edit_product(
     is_new: str = Form(""),
     is_hit: str = Form(""),
     photo_id: str = Form(""),
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
 ):
-    if not session:
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     try:
@@ -156,16 +156,18 @@ async def edit_product(
         if photo_id_val:
             await conn.execute(
                 """UPDATE products SET name=$1, brand=$2, description=$3, price=$4, stock=$5,
-                   old_price=$6, is_new=$7, is_hit=$8, photo_id=$9 WHERE id=$10""",
+                   old_price=$6, is_new=$7, is_hit=$8, photo_id=$9
+                   WHERE id=$10 AND shop_id=$11""",
                 name, brand_val, description, price, stock, old_price_val,
-                1 if is_new else 0, 1 if is_hit else 0, photo_id_val, product_id
+                1 if is_new else 0, 1 if is_hit else 0, photo_id_val, product_id, shop_id
             )
         else:
             await conn.execute(
                 """UPDATE products SET name=$1, brand=$2, description=$3, price=$4, stock=$5,
-                   old_price=$6, is_new=$7, is_hit=$8 WHERE id=$9""",
+                   old_price=$6, is_new=$7, is_hit=$8
+                   WHERE id=$9 AND shop_id=$10""",
                 name, brand_val, description, price, stock, old_price_val,
-                1 if is_new else 0, 1 if is_hit else 0, product_id
+                1 if is_new else 0, 1 if is_hit else 0, product_id, shop_id
             )
     finally:
         await conn.close()
@@ -174,14 +176,15 @@ async def edit_product(
 
 
 @router.post("/{product_id}/toggle")
-async def toggle_product(product_id: int, session: str = Depends(verify_session)):
-    if not session:
+async def toggle_product(product_id: int, shop_id: int = Depends(get_current_shop_id)):
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
-            "UPDATE products SET is_active = NOT is_active WHERE id = $1", product_id
+            "UPDATE products SET is_active = NOT is_active WHERE id = $1 AND shop_id = $2",
+            product_id, shop_id
         )
     finally:
         await conn.close()
@@ -190,8 +193,12 @@ async def toggle_product(product_id: int, session: str = Depends(verify_session)
 
 
 @router.post("/{product_id}/restock")
-async def restock_product(product_id: int, quantity: int = Form(...), session: str = Depends(verify_session)):
-    if not session:
+async def restock_product(
+    product_id: int,
+    quantity: int = Form(...),
+    shop_id: int = Depends(get_current_shop_id),
+):
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     product = None
@@ -199,9 +206,12 @@ async def restock_product(product_id: int, quantity: int = Form(...), session: s
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
-            "UPDATE products SET stock = stock + $1 WHERE id = $2", quantity, product_id
+            "UPDATE products SET stock = stock + $1 WHERE id = $2 AND shop_id = $3",
+            quantity, product_id, shop_id
         )
-        product = await conn.fetchrow("SELECT name FROM products WHERE id = $1", product_id)
+        product = await conn.fetchrow(
+            "SELECT name FROM products WHERE id = $1 AND shop_id = $2", product_id, shop_id
+        )
         waitlist = await conn.fetch("""
             SELECT c.telegram_id FROM waitlist w
             JOIN customers c ON w.customer_id = c.id

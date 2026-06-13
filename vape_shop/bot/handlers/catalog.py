@@ -8,6 +8,7 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://postgres:jHInKjjHzgONUJeWLNNkoxIumLhqIjIs@tramway.proxy.rlwy.net:56512/railway"
 )
+SHOP_ID = int(os.getenv("SHOP_ID", "1"))
 
 router = Router()
 
@@ -71,18 +72,18 @@ async def get_liquid_brands() -> list:
             SELECT brand,
                    COUNT(*) FILTER (WHERE stock > 0) as in_stock
             FROM products
-            WHERE category = 'liquids' AND is_active = TRUE AND brand IS NOT NULL
+            WHERE category = 'liquids' AND is_active = TRUE AND brand IS NOT NULL AND shop_id = $1
             GROUP BY brand
             ORDER BY brand
-        """)
+        """, SHOP_ID)
         brands = [{"brand": r["brand"], "in_stock": r["in_stock"]} for r in rows]
 
         no_brand = await conn.fetchrow("""
             SELECT COUNT(*) FILTER (WHERE stock > 0) as in_stock,
                    COUNT(*) as total
             FROM products
-            WHERE category = 'liquids' AND is_active = TRUE AND brand IS NULL
-        """)
+            WHERE category = 'liquids' AND is_active = TRUE AND brand IS NULL AND shop_id = $1
+        """, SHOP_ID)
         if no_brand and no_brand["total"]:
             brands.append({"brand": "__no_brand__", "in_stock": no_brand["in_stock"]})
         return brands
@@ -96,15 +97,15 @@ async def get_products_by_brand(brand: str) -> list:
         if brand == "__no_brand__":
             rows = await conn.fetch("""
                 SELECT * FROM products
-                WHERE category = 'liquids' AND brand IS NULL AND is_active = TRUE
+                WHERE category = 'liquids' AND brand IS NULL AND is_active = TRUE AND shop_id = $1
                 ORDER BY name
-            """)
+            """, SHOP_ID)
         else:
             rows = await conn.fetch("""
                 SELECT * FROM products
-                WHERE category = 'liquids' AND brand = $1 AND is_active = TRUE
+                WHERE category = 'liquids' AND brand = $1 AND is_active = TRUE AND shop_id = $2
                 ORDER BY name
-            """, brand)
+            """, brand, SHOP_ID)
         return [dict(r) for r in rows]
     finally:
         await conn.close()
@@ -286,8 +287,11 @@ async def show_product(callback):
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         rows = await conn.fetch(
-            "SELECT photo_id FROM product_photos WHERE product_id = $1 ORDER BY position",
-            product_id
+            """SELECT pp.photo_id FROM product_photos pp
+               JOIN products p ON pp.product_id = p.id
+               WHERE pp.product_id = $1 AND p.shop_id = $2
+               ORDER BY pp.position""",
+            product_id, SHOP_ID
         )
     finally:
         await conn.close()

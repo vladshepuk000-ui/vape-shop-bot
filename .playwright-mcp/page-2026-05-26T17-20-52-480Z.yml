@@ -1,0 +1,107 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: 🌿 Vape Admin
+    - navigation [ref=e4]:
+      - link "📊 Дашборд" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "📦 Замовлення" [ref=e6] [cursor=pointer]:
+        - /url: /orders
+      - link "🛍 Товари" [ref=e7] [cursor=pointer]:
+        - /url: /products
+      - link "👥 Клієнти" [ref=e8] [cursor=pointer]:
+        - /url: /customers
+      - link "📢 Розсилки" [ref=e9] [cursor=pointer]:
+        - /url: /broadcasts
+      - link "🤖 ІІ Контент" [ref=e10] [cursor=pointer]:
+        - /url: /content-manager
+    - link "🚪 Вийти" [ref=e12] [cursor=pointer]:
+      - /url: /logout
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Дашборд" [level=1] [ref=e16]
+      - generic [ref=e17]: Vape Shop
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]: Всього замовлень
+          - generic [ref=e22]: "53"
+        - generic [ref=e23]:
+          - generic [ref=e24]: Нові замовлення
+          - generic [ref=e25]: "5"
+        - generic [ref=e26]:
+          - generic [ref=e27]: Виручка (done)
+          - generic [ref=e28]: 10559 грн
+        - generic [ref=e29]:
+          - generic [ref=e30]: Клієнти
+          - generic [ref=e31]: "68"
+        - generic [ref=e32]:
+          - generic [ref=e33]: Активних товарів
+          - generic [ref=e34]: "19"
+        - generic [ref=e35]:
+          - generic [ref=e36]: Немає в наявності
+          - generic [ref=e37]: "13"
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - heading "Останні замовлення" [level=2] [ref=e40]
+          - link "Всі замовлення →" [ref=e41] [cursor=pointer]:
+            - /url: /orders
+        - table [ref=e42]:
+          - rowgroup [ref=e43]:
+            - row "# Клієнт Сума Статус Дата" [ref=e44]:
+              - columnheader "#" [ref=e45]
+              - columnheader "Клієнт" [ref=e46]
+              - columnheader "Сума" [ref=e47]
+              - columnheader "Статус" [ref=e48]
+              - columnheader "Дата" [ref=e49]
+              - columnheader [ref=e50]
+          - rowgroup [ref=e51]:
+            - row "#53 @tanyushkazz 448 грн done 2026-05-24 12:41 Деталі" [ref=e52]:
+              - cell "#53" [ref=e53]
+              - cell "@tanyushkazz" [ref=e54]
+              - cell "448 грн" [ref=e55]
+              - cell "done" [ref=e56]:
+                - generic [ref=e57]: done
+              - cell "2026-05-24 12:41" [ref=e58]
+              - cell "Деталі" [ref=e59]:
+                - link "Деталі" [ref=e60] [cursor=pointer]:
+                  - /url: /orders/53
+            - row "#52 @zwq_vikasxx 250 грн cancelled 2026-05-21 14:16 Деталі" [ref=e61]:
+              - cell "#52" [ref=e62]
+              - cell "@zwq_vikasxx" [ref=e63]
+              - cell "250 грн" [ref=e64]
+              - cell "cancelled" [ref=e65]:
+                - generic [ref=e66]: cancelled
+              - cell "2026-05-21 14:16" [ref=e67]
+              - cell "Деталі" [ref=e68]:
+                - link "Деталі" [ref=e69] [cursor=pointer]:
+                  - /url: /orders/52
+            - row "#51 @pawnbroker1 399 грн done 2026-05-18 16:15 Деталі" [ref=e70]:
+              - cell "#51" [ref=e71]
+              - cell "@pawnbroker1" [ref=e72]
+              - cell "399 грн" [ref=e73]
+              - cell "done" [ref=e74]:
+                - generic [ref=e75]: done
+              - cell "2026-05-18 16:15" [ref=e76]
+              - cell "Деталі" [ref=e77]:
+                - link "Деталі" [ref=e78] [cursor=pointer]:
+                  - /url: /orders/51
+            - row "#50 @wergtyss 500 грн done 2026-05-17 11:00 Деталі" [ref=e79]:
+              - cell "#50" [ref=e80]
+              - cell "@wergtyss" [ref=e81]
+              - cell "500 грн" [ref=e82]
+              - cell "done" [ref=e83]:
+                - generic [ref=e84]: done
+              - cell "2026-05-17 11:00" [ref=e85]
+              - cell "Деталі" [ref=e86]:
+                - link "Деталі" [ref=e87] [cursor=pointer]:
+                  - /url: /orders/50
+            - row "#49 @delkins_15 399 грн done 2026-05-16 21:51 Деталі" [ref=e88]:
+              - cell "#49" [ref=e89]
+              - cell "@delkins_15" [ref=e90]
+              - cell "399 грн" [ref=e91]
+              - cell "done" [ref=e92]:
+                - generic [ref=e93]: done
+              - cell "2026-05-16 21:51" [ref=e94]
+              - cell "Деталі" [ref=e95]:
+                - link "Деталі" [ref=e96] [cursor=pointer]:
+                  - /url: /orders/49

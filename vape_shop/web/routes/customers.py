@@ -3,7 +3,7 @@ import asyncpg
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from web.auth_utils import verify_session
+from web.auth_utils import get_current_shop_id
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=BASE_DIR)
@@ -16,8 +16,8 @@ router = APIRouter(prefix="/customers")
 
 
 @router.get("", response_class=HTMLResponse)
-async def customers_list(request: Request, session: str = Depends(verify_session)):
-    if not session:
+async def customers_list(request: Request, shop_id: int = Depends(get_current_shop_id)):
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     conn = await asyncpg.connect(DATABASE_URL)
@@ -27,10 +27,11 @@ async def customers_list(request: Request, session: str = Depends(verify_session
                    COUNT(o.id) as orders_count,
                    COALESCE(SUM(o.total_price), 0) as total_spent
             FROM customers c
-            LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'done'
+            LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'done' AND o.shop_id = $1
+            WHERE c.shop_id = $1
             GROUP BY c.id
             ORDER BY c.first_seen DESC
-        """)
+        """, shop_id)
     finally:
         await conn.close()
 

@@ -210,6 +210,32 @@ async def create_tables():
         ]:
             await conn.execute(col_sql)
 
+        # Мультитенантність — shop_id до всіх таблиць
+        for col_sql in [
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS shop_id INTEGER DEFAULT 1",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS shop_id INTEGER DEFAULT 1",
+            "ALTER TABLE broadcasts ADD COLUMN IF NOT EXISTS shop_id INTEGER DEFAULT 1",
+            "ALTER TABLE broadcast_templates ADD COLUMN IF NOT EXISTS shop_id INTEGER DEFAULT 1",
+            "ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS shop_id TEXT DEFAULT '1'",
+            "ALTER TABLE customers ADD COLUMN IF NOT EXISTS shop_id INTEGER DEFAULT 1",
+        ]:
+            await conn.execute(col_sql)
+
+        # Міняємо унікальний ключ customers: telegram_id → (telegram_id, shop_id)
+        await conn.execute("""
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'customers_telegram_id_key'
+                ) THEN
+                    ALTER TABLE customers DROP CONSTRAINT customers_telegram_id_key;
+                    ALTER TABLE customers ADD CONSTRAINT customers_telegram_id_shop_id_key
+                        UNIQUE(telegram_id, shop_id);
+                END IF;
+            END$$;
+        """)
+
         print("OK: Всі таблиці створено успішно")
     finally:
         await conn.close()

@@ -6,7 +6,7 @@ from PIL import Image
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from web.auth_utils import verify_session
+from web.auth_utils import get_current_shop_id
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=BASE_DIR)
@@ -96,8 +96,8 @@ async def generate_text(system_prompt: str, product_description: str) -> str:
 
 
 @router.get("", response_class=HTMLResponse)
-async def content_manager_page(request: Request, session: str = Depends(verify_session)):
-    if not session:
+async def content_manager_page(request: Request, shop_id: int = Depends(get_current_shop_id)):
+    if not shop_id:
         return RedirectResponse(url="/login")
     return templates.TemplateResponse(request, "content_manager.html")
 
@@ -105,7 +105,7 @@ async def content_manager_page(request: Request, session: str = Depends(verify_s
 @router.post("/generate", response_class=JSONResponse)
 async def generate_content(
     request: Request,
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
     name: str = Form(...),
     brand: str = Form(""),
     category: str = Form("liquids"),
@@ -116,7 +116,7 @@ async def generate_content(
     price: str = Form(""),
     notes: str = Form(""),
 ):
-    if not session:
+    if not shop_id:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
 
     product_data = {
@@ -142,10 +142,10 @@ async def generate_content(
 @router.post("/remove-bg")
 async def remove_background(
     request: Request,
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
     photo: UploadFile = File(...),
 ):
-    if not session:
+    if not shop_id:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
     if not REMOVE_BG_API_KEY:
         return JSONResponse({"error": "REMOVE_BG_API_KEY не налаштований"}, status_code=500)
@@ -187,11 +187,11 @@ async def remove_background(
 @router.post("/publish-telegram", response_class=JSONResponse)
 async def publish_telegram(
     request: Request,
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
     text: str = Form(...),
     photo: UploadFile = File(default=None),
 ):
-    if not session:
+    if not shop_id:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
     if not BOT_TOKEN:
         return JSONResponse({"error": "BOT_TOKEN не налаштований"}, status_code=500)
@@ -266,7 +266,7 @@ async def publish_telegram(
 @router.post("/add-product", response_class=JSONResponse)
 async def add_product_to_site(
     request: Request,
-    session: str = Depends(verify_session),
+    shop_id: int = Depends(get_current_shop_id),
     name: str = Form(...),
     brand: str = Form(""),
     category: str = Form("liquids"),
@@ -275,7 +275,7 @@ async def add_product_to_site(
     site_text: str = Form(...),
     photo: UploadFile = File(default=None),
 ):
-    if not session:
+    if not shop_id:
         return JSONResponse({"error": "Не авторизований"}, status_code=401)
 
     # Upload photo to Telegram to get file_id
@@ -306,9 +306,9 @@ async def add_product_to_site(
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         await conn.execute(
-            """INSERT INTO products (name, brand, category, description, price, stock, photo_id, is_active)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)""",
-            name, brand_val, category, site_text, price_val, stock, photo_id,
+            """INSERT INTO products (name, brand, category, description, price, stock, photo_id, is_active, shop_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8)""",
+            name, brand_val, category, site_text, price_val, stock, photo_id, shop_id,
         )
     finally:
         await conn.close()

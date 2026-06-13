@@ -1,0 +1,9 @@
+- generic [ref=e2]:
+  - generic [ref=e3]: 🌿
+  - generic [ref=e4]: Vape Shop Admin
+  - generic [ref=e5]: Введи пароль для входу
+  - generic [ref=e6]: Невірний пароль
+  - generic [ref=e7]:
+    - generic [ref=e8]: Пароль
+    - textbox "••••••••" [active] [ref=e9]
+    - button "Увійти" [ref=e10] [cursor=pointer]

@@ -21,3 +21,17 @@ async def verify_session(session: Optional[str] = Cookie(default=None)) -> bool:
         return row is not None
     finally:
         await conn.close()
+
+
+async def get_current_shop_id(session: Optional[str] = Cookie(default=None)) -> Optional[int]:
+    if not session:
+        return None
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        row = await conn.fetchrow(
+            "SELECT shop_owner_id FROM sessions WHERE token = $1 AND expires_at > NOW()",
+            session
+        )
+        return row["shop_owner_id"] if row else None
+    finally:
+        await conn.close()

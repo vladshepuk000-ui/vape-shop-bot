@@ -3,7 +3,7 @@ import asyncpg
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from web.auth_utils import verify_session
+from web.auth_utils import get_current_shop_id
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=BASE_DIR)
@@ -16,29 +16,30 @@ router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, session: str = Depends(verify_session)):
-    if not session:
+async def dashboard(request: Request, shop_id: int = Depends(get_current_shop_id)):
+    if not shop_id:
         return RedirectResponse(url="/login")
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        total_orders = await conn.fetchval("SELECT COUNT(*) FROM orders")
-        new_orders = await conn.fetchval("SELECT COUNT(*) FROM orders WHERE status = 'new'")
+        total_orders = await conn.fetchval("SELECT COUNT(*) FROM orders WHERE shop_id = $1", shop_id)
+        new_orders = await conn.fetchval("SELECT COUNT(*) FROM orders WHERE status = 'new' AND shop_id = $1", shop_id)
         revenue = await conn.fetchval(
-            "SELECT COALESCE(SUM(total_price), 0) FROM orders WHERE status = 'done'"
+            "SELECT COALESCE(SUM(total_price), 0) FROM orders WHERE status = 'done' AND shop_id = $1", shop_id
         )
-        total_customers = await conn.fetchval("SELECT COUNT(*) FROM customers")
-        active_products = await conn.fetchval("SELECT COUNT(*) FROM products WHERE is_active = TRUE")
+        total_customers = await conn.fetchval("SELECT COUNT(*) FROM customers WHERE shop_id = $1", shop_id)
+        active_products = await conn.fetchval("SELECT COUNT(*) FROM products WHERE is_active = TRUE AND shop_id = $1", shop_id)
         out_of_stock = await conn.fetchval(
-            "SELECT COUNT(*) FROM products WHERE is_active = TRUE AND stock = 0"
+            "SELECT COUNT(*) FROM products WHERE is_active = TRUE AND stock = 0 AND shop_id = $1", shop_id
         )
         recent_orders = await conn.fetch("""
             SELECT o.id, o.status, o.total_price, o.created_at,
                    c.username, c.telegram_id
             FROM orders o
             LEFT JOIN customers c ON o.customer_id = c.id
+            WHERE o.shop_id = $1
             ORDER BY o.created_at DESC LIMIT 5
-        """)
+        """, shop_id)
     finally:
         await conn.close()
 

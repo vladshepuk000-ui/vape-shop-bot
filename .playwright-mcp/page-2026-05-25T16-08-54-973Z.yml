@@ -1,0 +1,417 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "🌿 VapeShop" [ref=e3] [cursor=pointer]:
+      - /url: /site
+    - generic [ref=e4]:
+      - link "Каталог" [ref=e5] [cursor=pointer]:
+        - /url: "#categories"
+      - link "Як замовити" [ref=e6] [cursor=pointer]:
+        - /url: "#how"
+      - link "Відгуки" [ref=e7] [cursor=pointer]:
+        - /url: "#reviews"
+      - link "FAQ" [ref=e8] [cursor=pointer]:
+        - /url: "#faq"
+      - link "Контакти" [ref=e9] [cursor=pointer]:
+        - /url: "#contacts"
+    - generic [ref=e10]:
+      - button "🛒" [ref=e11] [cursor=pointer]
+      - link "Відкрити бота" [ref=e12] [cursor=pointer]:
+        - /url: https://t.me/vm_vape_shop_bot
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - link "🌿 VapeShop" [ref=e15] [cursor=pointer]:
+        - /url: /site
+      - button "✕" [ref=e16] [cursor=pointer]
+    - generic [ref=e17]:
+      - link "🛍 Каталог" [ref=e18] [cursor=pointer]:
+        - /url: "#categories"
+        - generic [ref=e19]: 🛍
+        - text: Каталог
+      - link "📋 Як замовити" [ref=e20] [cursor=pointer]:
+        - /url: "#how"
+        - generic [ref=e21]: 📋
+        - text: Як замовити
+      - link "⭐ Відгуки" [ref=e22] [cursor=pointer]:
+        - /url: "#reviews"
+        - generic [ref=e23]: ⭐
+        - text: Відгуки
+      - link "❓ FAQ" [ref=e24] [cursor=pointer]:
+        - /url: "#faq"
+        - generic [ref=e25]: ❓
+        - text: FAQ
+      - link "📞 Контакти" [ref=e26] [cursor=pointer]:
+        - /url: "#contacts"
+        - generic [ref=e27]: 📞
+        - text: Контакти
+    - link "✈️ Відкрити бота в Telegram" [ref=e29] [cursor=pointer]:
+      - /url: https://t.me/vm_vape_shop_bot
+  - generic [ref=e30]:
+    - generic [ref=e31]:
+      - heading "🛒 Кошик" [level=3] [ref=e32]
+      - button "×" [ref=e33] [cursor=pointer]
+    - generic [ref=e35]: 🛒 Кошик порожній
+  - generic [ref=e36]:
+    - generic:
+      - generic: 💨
+      - generic: 💨
+      - generic: 💨
+      - generic: 💨
+      - generic: 💨
+      - generic: 💨
+    - generic [ref=e37]:
+      - generic [ref=e38]: 🌿 Vape Shop — Велика Михайлівка
+      - heading "Якісні вейпи з доставкою додому" [level=1] [ref=e39]:
+        - text: Якісні вейпи
+        - text: з доставкою додому
+      - paragraph [ref=e40]:
+        - text: Рідини, картриджі та системи (поди) за найкращими цінами.
+        - text: Замовляй прямо в Telegram — швидко та зручно.
+      - generic [ref=e41]:
+        - link "✈️ Написати в Telegram" [ref=e42] [cursor=pointer]:
+          - /url: https://t.me/vm_vape_shop_bot
+        - link "📦 Переглянути каталог" [ref=e43] [cursor=pointer]:
+          - /url: "#categories"
+  - generic [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]: "6"
+      - generic [ref=e47]: Товарів в наявності
+    - generic [ref=e48]:
+      - generic [ref=e49]: "67"
+      - generic [ref=e50]: Задоволених клієнтів
+    - generic [ref=e51]:
+      - generic [ref=e52]: "2"
+      - generic [ref=e53]: Онлайн зараз
+  - generic [ref=e55]:
+    - generic [ref=e56]:
+      - generic [ref=e57]: Асортимент
+      - generic [ref=e58]: Наш каталог
+      - generic [ref=e59]: Тільки перевірені бренди та свіжі рідини. Натисни на товар щоб замовити в боті.
+    - textbox "🔍 Пошук товарів..." [ref=e61]
+    - generic [ref=e62]:
+      - button "Всі" [ref=e63] [cursor=pointer]
+      - button "💧 Рідини" [ref=e64] [cursor=pointer]
+      - button "🔋 Картриджі" [ref=e65] [cursor=pointer]
+      - button "🌬️ Системи" [ref=e66] [cursor=pointer]
+    - generic [ref=e67]:
+      - generic [ref=e68] [cursor=pointer]:
+        - generic [ref=e69]:
+          - generic [ref=e70]: 🔥 Хіт
+          - img "Картридж XROS Pod 0.6 Ом, 3 мл" [ref=e71]
+        - generic [ref=e72]:
+          - heading "Картридж XROS Pod 0.6 Ом, 3 мл" [level=3] [ref=e73]
+          - generic [ref=e74]:
+            - generic [ref=e75]: 149 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e76]
+      - generic [ref=e77] [cursor=pointer]:
+        - img "Картридж XROS Pod 0.8 Ом, 3 мл" [ref=e79]
+        - generic [ref=e80]:
+          - heading "Картридж XROS Pod 0.8 Ом, 3 мл" [level=3] [ref=e81]
+          - generic [ref=e82]:
+            - generic [ref=e83]: 149 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e84]
+      - generic [ref=e85] [cursor=pointer]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: 🔥 Хіт
+          - img "FL 350 Apple 30 мл" [ref=e88]
+        - generic [ref=e89]:
+          - heading "FL 350 Apple 30 мл" [level=3] [ref=e90]
+          - generic [ref=e91]:
+            - generic [ref=e92]: 319 грн 299 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e93]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e96]: Немає
+          - img "FL 350 Blueberry Menthol 30 мл" [ref=e97]
+        - generic [ref=e98]:
+          - heading "FL 350 Blueberry Menthol 30 мл" [level=3] [ref=e99]
+          - generic [ref=e100]:
+            - generic [ref=e101]: 319 грн 299 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e102]
+      - generic [ref=e103] [cursor=pointer]:
+        - generic [ref=e104]:
+          - generic [ref=e105]: 🆕 Новинка
+          - img "FL 350 Blueberry Raspberry 30 мл" [ref=e106]
+        - generic [ref=e107]:
+          - heading "FL 350 Blueberry Raspberry 30 мл" [level=3] [ref=e108]
+          - generic [ref=e109]:
+            - generic [ref=e110]: 319 грн 299 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e111]
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - generic [ref=e114]: Немає
+          - img "FL 350 Cherry Menthol 30 мл" [ref=e115]
+        - generic [ref=e116]:
+          - heading "FL 350 Cherry Menthol 30 мл" [level=3] [ref=e117]
+          - generic [ref=e118]:
+            - generic [ref=e119]: 319 грн 299 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e120]
+      - generic [ref=e121] [cursor=pointer]:
+        - generic [ref=e122]:
+          - generic [ref=e123]: 🆕 Новинка
+          - img "FL 350 Grape 30 мл" [ref=e124]
+        - generic [ref=e125]:
+          - heading "FL 350 Grape 30 мл" [level=3] [ref=e126]
+          - generic [ref=e127]:
+            - generic [ref=e128]: 299 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e129]
+      - generic [ref=e130] [cursor=pointer]:
+        - generic [ref=e131]:
+          - generic [ref=e132]: 🆕 Новинка
+          - img "FL350 Super Mint Ice 30 мл" [ref=e133]
+        - generic [ref=e134]:
+          - heading "FL350 Super Mint Ice 30 мл" [level=3] [ref=e135]
+          - generic [ref=e136]:
+            - generic [ref=e137]: 319 грн 299 грн
+            - text: Детальніше →
+            - button "🛒 В кошик" [ref=e138]
+      - generic [ref=e139]:
+        - generic [ref=e140]:
+          - generic [ref=e141]: Немає
+          - img "Жижа NOVA Salt Blueberry Currant" [ref=e142]
+        - generic [ref=e143]:
+          - heading "Жижа NOVA Salt Blueberry Currant" [level=3] [ref=e144]
+          - generic [ref=e145]:
+            - generic [ref=e146]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e147]
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e150]: Немає
+          - img "Жижа NOVA Salt Watermelon Lychee" [ref=e151]
+        - generic [ref=e152]:
+          - heading "Жижа NOVA Salt Watermelon Lychee" [level=3] [ref=e153]
+          - generic [ref=e154]:
+            - generic [ref=e155]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e156]
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - generic [ref=e159]: Немає
+          - img "Рідина Chaser Nova 30 мл Apple Mix" [ref=e160]
+        - generic [ref=e161]:
+          - heading "Рідина Chaser Nova 30 мл Apple Mix" [level=3] [ref=e162]
+          - generic [ref=e163]:
+            - generic [ref=e164]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e165]
+      - generic [ref=e166]:
+        - generic [ref=e167]:
+          - generic [ref=e168]: Немає
+          - img "Рідина Chaser Nova 30 мл Berry Mint" [ref=e169]
+        - generic [ref=e170]:
+          - heading "Рідина Chaser Nova 30 мл Berry Mint" [level=3] [ref=e171]
+          - generic [ref=e172]:
+            - generic [ref=e173]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e174]
+      - generic [ref=e175]:
+        - generic [ref=e176]:
+          - generic [ref=e177]: Немає
+          - img "Рідина Chaser Nova 30 мл Blackcurrant Grape" [ref=e178]
+        - generic [ref=e179]:
+          - heading "Рідина Chaser Nova 30 мл Blackcurrant Grape" [level=3] [ref=e180]
+          - generic [ref=e181]:
+            - generic [ref=e182]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e183]
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - generic [ref=e186]: Немає
+          - img "Рідина Chaser Nova 30 мл Cranberry Mors" [ref=e187]
+        - generic [ref=e188]:
+          - heading "Рідина Chaser Nova 30 мл Cranberry Mors" [level=3] [ref=e189]
+          - generic [ref=e190]:
+            - generic [ref=e191]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e192]
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - generic [ref=e195]: Немає
+          - img "Рідина Chaser Nova 30 мл Double Raspberry" [ref=e196]
+        - generic [ref=e197]:
+          - heading "Рідина Chaser Nova 30 мл Double Raspberry" [level=3] [ref=e198]
+          - generic [ref=e199]:
+            - generic [ref=e200]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e201]
+      - generic [ref=e202]:
+        - generic [ref=e203]:
+          - generic [ref=e204]: Немає
+          - img "Рідина Chaser Nova 30 мл Pineapple Lemonade" [ref=e205]
+        - generic [ref=e206]:
+          - heading "Рідина Chaser Nova 30 мл Pineapple Lemonade" [level=3] [ref=e207]
+          - generic [ref=e208]:
+            - generic [ref=e209]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e210]
+      - generic [ref=e211]:
+        - generic [ref=e212]:
+          - generic [ref=e213]: Немає
+          - img "Рідина Chaser Nova 30 мл Spearmint" [ref=e214]
+        - generic [ref=e215]:
+          - heading "Рідина Chaser Nova 30 мл Spearmint" [level=3] [ref=e216]
+          - generic [ref=e217]:
+            - generic [ref=e218]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e219]
+      - generic [ref=e220]:
+        - generic [ref=e221]:
+          - generic [ref=e222]: Немає
+          - img "Рідина Chaser Nova 30 мл Watermelon Melon" [ref=e223]
+        - generic [ref=e224]:
+          - heading "Рідина Chaser Nova 30 мл Watermelon Melon" [level=3] [ref=e225]
+          - generic [ref=e226]:
+            - generic [ref=e227]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e228]
+      - generic [ref=e229]:
+        - generic [ref=e230]:
+          - generic [ref=e231]: Немає
+          - img "Рідина NOVA 30 мл Double Grape" [ref=e232]
+        - generic [ref=e233]:
+          - heading "Рідина NOVA 30 мл Double Grape" [level=3] [ref=e234]
+          - generic [ref=e235]:
+            - generic [ref=e236]: 250 грн
+            - text: Детальніше →
+            - button "✕ Немає в наявності" [disabled] [ref=e237]
+  - generic [ref=e238]:
+    - generic [ref=e239]:
+      - generic [ref=e240]: Просто
+      - generic [ref=e241]: Як замовити
+      - generic [ref=e242]: Весь процес займає лічені хвилини прямо в Telegram
+    - generic [ref=e243]:
+      - generic [ref=e244]:
+        - generic [ref=e245]: "1"
+        - heading "Відкрий бота" [level=3] [ref=e246]
+        - paragraph [ref=e247]: Натисни кнопку "Написати в Telegram" та запусти бота командою /start
+      - generic [ref=e248]:
+        - generic [ref=e249]: "2"
+        - heading "Обери товар" [level=3] [ref=e250]
+        - paragraph [ref=e251]: Перейди до каталогу, обери категорію та додай товари до кошика
+      - generic [ref=e252]:
+        - generic [ref=e253]: "3"
+        - heading "Оформи замовлення" [level=3] [ref=e254]
+        - paragraph [ref=e255]: Вкажи адресу доставки або обери самовивіз, оплати — і чекай!
+      - generic [ref=e256]:
+        - generic [ref=e257]: "4"
+        - heading "Отримай товар" [level=3] [ref=e258]
+        - paragraph [ref=e259]: Доставка Новою Поштою або самовивіз у Великій Михайлівці
+  - generic [ref=e260]:
+    - generic [ref=e261]:
+      - generic [ref=e262]: Доставка
+      - generic [ref=e263]: Зручна доставка
+      - generic [ref=e264]: Обирай зручний спосіб отримання замовлення
+    - generic [ref=e265]:
+      - generic [ref=e266]:
+        - generic [ref=e267]: 📦
+        - heading "Нова Пошта" [level=3] [ref=e268]
+        - paragraph [ref=e269]: Доставка по всій Україні. Відправляємо в день замовлення або наступного дня.
+      - generic [ref=e270]:
+        - generic [ref=e271]: 🚶
+        - heading "Самовивіз" [level=3] [ref=e272]
+        - paragraph [ref=e273]: Велика Михайлівка (уточніть адресу та час у @Vlad_shepuk). Узгодіть час зручний для вас через Telegram.
+      - generic [ref=e274]:
+        - generic [ref=e275]: 💳
+        - heading "Оплата" [level=3] [ref=e276]
+        - paragraph [ref=e277]: Картка, готівка або накладений платіж — обирай зручний спосіб.
+  - generic [ref=e278]:
+    - generic [ref=e279]:
+      - generic [ref=e280]: Відгуки
+      - generic [ref=e281]: Що кажуть клієнти
+      - generic [ref=e282]: Реальні відгуки від наших покупців
+    - generic [ref=e283]:
+      - generic [ref=e285]:
+        - generic [ref=e286]:
+          - generic [ref=e287]: ⭐⭐⭐⭐⭐
+          - generic [ref=e288]: Всё очень быстро жыжа топ
+          - generic [ref=e289]: "@Kostik446 · 2026-05-05"
+        - generic [ref=e290]:
+          - generic [ref=e291]: ⭐⭐⭐⭐⭐
+          - generic [ref=e292]: прикольно что сделали бот, первый раз пользуюсь но понравилось,удобно)
+          - generic [ref=e293]: "@wergtyss · 2026-04-27"
+        - generic [ref=e294]:
+          - generic [ref=e295]: ⭐⭐⭐⭐⭐
+          - generic [ref=e296]: Дуже класно і бистро
+          - generic [ref=e297]: "@Jtgct · 2026-04-26"
+        - generic [ref=e298]:
+          - generic [ref=e299]: ⭐⭐⭐⭐⭐
+          - generic [ref=e300]: все бистро и качественно
+          - generic [ref=e301]: "@TSAR_911 · 2026-04-26"
+        - generic [ref=e302]:
+          - generic [ref=e303]: ⭐⭐⭐⭐⭐
+          - generic [ref=e304]: рідина просто супер! Беру не вперше рідини, і усі подобаються! Обов’язково буду замовляти ще!
+          - generic [ref=e305]: "@stupidsonn · 2026-04-26"
+        - generic [ref=e306]:
+          - generic [ref=e307]: ⭐⭐⭐⭐⭐
+          - generic [ref=e308]: 👍
+          - generic [ref=e309]: "@sofangel11 · 2026-04-23"
+      - generic [ref=e310]:
+        - button "‹" [ref=e311] [cursor=pointer]
+        - generic [ref=e312]:
+          - button [ref=e313] [cursor=pointer]
+          - button [ref=e314] [cursor=pointer]
+          - button [ref=e315] [cursor=pointer]
+          - button [ref=e316] [cursor=pointer]
+          - button [ref=e317] [cursor=pointer]
+          - button [ref=e318] [cursor=pointer]
+        - button "›" [ref=e319] [cursor=pointer]
+  - generic [ref=e320]:
+    - generic [ref=e321]:
+      - generic [ref=e322]: Питання
+      - generic [ref=e323]: Часті запитання
+      - generic [ref=e324]: Відповіді на найпопулярніші питання
+    - generic [ref=e325]:
+      - generic [ref=e327] [cursor=pointer]:
+        - text: Як зробити замовлення?
+        - generic [ref=e328]: +
+      - generic [ref=e330] [cursor=pointer]:
+        - text: Яка мінімальна сума замовлення?
+        - generic [ref=e331]: +
+      - generic [ref=e333] [cursor=pointer]:
+        - text: Скільки часу займає доставка?
+        - generic [ref=e334]: +
+      - generic [ref=e336] [cursor=pointer]:
+        - text: Як оплатити замовлення?
+        - generic [ref=e337]: +
+      - generic [ref=e339] [cursor=pointer]:
+        - text: Як дізнатися про нові товари та акції?
+        - generic [ref=e340]: +
+      - generic [ref=e342] [cursor=pointer]:
+        - text: Де забрати товар при самовивозі?
+        - generic [ref=e343]: +
+  - contentinfo [ref=e344]:
+    - generic [ref=e346]:
+      - generic [ref=e347]:
+        - generic [ref=e348]:
+          - link "🌿 VapeShop" [ref=e349] [cursor=pointer]:
+            - /url: /site
+          - paragraph [ref=e350]: Якісні рідини, картриджі та системи. Доставка по всій Україні. Велика Михайлівка.
+          - link "✈️ Написати в Telegram" [ref=e351] [cursor=pointer]:
+            - /url: https://t.me/vm_vape_shop_bot
+        - generic [ref=e352]:
+          - heading "Навігація" [level=4] [ref=e353]
+          - link "Каталог" [ref=e354] [cursor=pointer]:
+            - /url: "#categories"
+          - link "Як замовити" [ref=e355] [cursor=pointer]:
+            - /url: "#how"
+          - link "Відгуки" [ref=e356] [cursor=pointer]:
+            - /url: "#reviews"
+          - link "FAQ" [ref=e357] [cursor=pointer]:
+            - /url: "#faq"
+        - generic [ref=e358]:
+          - heading "Контакти" [level=4] [ref=e359]
+          - link "✈️ Telegram бот" [ref=e360] [cursor=pointer]:
+            - /url: https://t.me/vm_vape_shop_bot
+          - link "👤 @Vlad_shepuk" [ref=e361] [cursor=pointer]:
+            - /url: https://t.me/Vlad_shepuk
+          - link "📞 +380981256254" [ref=e362] [cursor=pointer]:
+            - /url: tel:+380981256254
+          - button "📋 Скопіювати номер" [ref=e363] [cursor=pointer]
+      - generic [ref=e364]: © 2026 Vape Shop · Велика Михайлівка · Всі права захищено
