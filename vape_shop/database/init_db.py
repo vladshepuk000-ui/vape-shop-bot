@@ -172,6 +172,35 @@ async def create_tables():
             )
         """)
 
+        # Власники магазинів (для SaaS / email-входу)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS shop_owners (
+                id         SERIAL PRIMARY KEY,
+                email      VARCHAR(255) UNIQUE NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # OTP-коди для входу через email
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS otp_codes (
+                id         SERIAL PRIMARY KEY,
+                email      VARCHAR(255) NOT NULL,
+                code       VARCHAR(6) NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                used       BOOLEAN DEFAULT FALSE
+            )
+        """)
+
+        # Сесії (замість статичного токена)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                token         VARCHAR(64) PRIMARY KEY,
+                shop_owner_id INTEGER REFERENCES shop_owners(id),
+                expires_at    TIMESTAMPTZ NOT NULL
+            )
+        """)
+
         # Додаткові колонки до products (якщо ще не існують)
         for col_sql in [
             "ALTER TABLE products ADD COLUMN IF NOT EXISTS old_price REAL DEFAULT NULL",

@@ -1,18 +1,23 @@
 import os
-import hashlib
-from fastapi import Cookie, HTTPException
+import asyncpg
+from fastapi import Cookie
 from typing import Optional
 
-ADMIN_PASSWORD = os.getenv("ADMIN_WEB_PASSWORD", "admin123")
-SESSION_TOKEN = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:jHInKjjHzgONUJeWLNNkoxIumLhqIjIs@tramway.proxy.rlwy.net:56512/railway"
+)
 
 
-def verify_session(session: Optional[str] = Cookie(default=None)) -> bool:
-    return session == SESSION_TOKEN
-
-
-def require_auth(session: Optional[str] = Cookie(default=None)):
-    from fastapi.responses import RedirectResponse
-    if session != SESSION_TOKEN:
-        return RedirectResponse(url="/login", status_code=302)
-    return True
+async def verify_session(session: Optional[str] = Cookie(default=None)) -> bool:
+    if not session:
+        return False
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        row = await conn.fetchrow(
+            "SELECT token FROM sessions WHERE token = $1 AND expires_at > NOW()",
+            session
+        )
+        return row is not None
+    finally:
+        await conn.close()

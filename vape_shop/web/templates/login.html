@@ -2,41 +2,86 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вхід — Vape Admin</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .login-box { background: #fff; border-radius: 16px; padding: 40px; width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            display: flex; align-items: center; justify-content: center; min-height: 100vh;
+        }
+        .login-box {
+            background: #fff; border-radius: 16px; padding: 40px; width: 380px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
         .login-logo { text-align: center; font-size: 40px; margin-bottom: 8px; }
         .login-title { text-align: center; font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
         .login-sub { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 28px; }
         label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #374151; }
-        input[type=password] {
-            width: 100%; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 8px;
-            font-size: 15px; outline: none; margin-bottom: 16px;
+        input[type=email], input[type=text] {
+            width: 100%; padding: 11px 14px; border: 1px solid #e5e7eb; border-radius: 8px;
+            font-size: 15px; outline: none; margin-bottom: 16px; transition: border-color .2s;
         }
-        input[type=password]:focus { border-color: #a78bfa; }
+        input[type=email]:focus, input[type=text]:focus { border-color: #a78bfa; }
+        input[type=text].code-input {
+            font-size: 28px; font-weight: 700; letter-spacing: 12px;
+            text-align: center; padding: 14px;
+        }
         button {
-            width: 100%; padding: 11px; background: #a78bfa; color: #fff; border: none;
+            width: 100%; padding: 12px; background: #a78bfa; color: #fff; border: none;
             border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: background .2s;
         }
         button:hover { background: #8b5cf6; }
-        .error { background: #fee2e2; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .error {
+            background: #fee2e2; color: #991b1b; padding: 10px 14px;
+            border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+        }
+        .info {
+            background: #ede9fe; color: #5b21b6; padding: 10px 14px;
+            border-radius: 8px; font-size: 13px; margin-bottom: 16px; text-align: center;
+        }
+        .back-link {
+            display: block; text-align: center; margin-top: 14px;
+            color: #a78bfa; font-size: 13px; text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="login-box">
     <div class="login-logo">🌿</div>
     <div class="login-title">Vape Shop Admin</div>
-    <div class="login-sub">Введи пароль для входу</div>
+
+    {% if step == "email" %}
+    <div class="login-sub">Введи свій email — надішлемо код для входу</div>
     {% if error %}
     <div class="error">{{ error }}</div>
     {% endif %}
-    <form method="post" action="/login">
-        <label>Пароль</label>
-        <input type="password" name="password" placeholder="••••••••" autofocus required>
+    <form method="post" action="/login/send-code">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="example@gmail.com"
+               value="{{ email }}" autofocus required>
+        <button type="submit">Надіслати код</button>
+    </form>
+
+    {% elif step == "code" %}
+    <div class="login-sub">Код надіслано на <strong>{{ email }}</strong></div>
+    <div class="info">Перевір пошту та введи 6-значний код</div>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/login/verify-code">
+        <input type="hidden" name="email" value="{{ email }}">
+        <label>Код з листа</label>
+        <input type="text" name="code" class="code-input"
+               placeholder="______" maxlength="6" autofocus
+               inputmode="numeric" pattern="[0-9]{6}" required>
         <button type="submit">Увійти</button>
     </form>
+    <a href="/login" class="back-link">Ввести інший email</a>
+    {% endif %}
 </div>
 </body>
 </html>
